@@ -1,59 +1,47 @@
 {
-  "name": "@voxgig/model",
-  "version": "0.0.9",
-  "main": "dist/model.js",
+  "name": "@voxgig/system",
+  "version": "0.0.1",
+  "main": "dist/system.js",
   "type": "commonjs",
-  "browser": "dist/model.min.js",
-  "types": "dist/model.d.ts",
-  "bin": {
-    "voxgig-model": "bin/voxgig-model"
-  },
-  "description": "Model.",
-  "homepage": "https://github.com/voxgig/model",
+  "types": "dist/system.d.ts",
+  "description": "System.",
+  "homepage": "https://github.com/voxgig/system",
   "keywords": [
-    "model"
+    "system"
   ],
   "author": "Richard Rodger (http://richardrodger.com)",
   "repository": {
     "type": "git",
-    "url": "git://github.com/voxgig/model.git"
+    "url": "git://github.com/voxgig/system.git"
   },
   "scripts": {
+    "test": "jest --coverage",
+    "test-some": "jest -t",
+    "test-watch": "jest --coverage --watchAll",
     "watch": "tsc -w -d",
-    "test": "lab -v -P test -t 50 --sourcemaps --transform node_modules/lab-transform-typescript -r console -o stdout -r html -o test/coverage.html",
-    "test-some": "lab -v -P test --sourcemaps --transform node_modules/lab-transform-typescript -g",
-    "test-jest": "jest --coverage",
-    "test-web": "echo no-test-web",
-    "test-web-x": "browserify -o test-web/test-web.js -e test/model.test.js -s Model -im -i assert -i @hapi/lab && open test-web/index.html",
-    "build-x": "tsc -d && cp dist/model.js dist/model.min.js && browserify -o dist/model.min.js -e dist/model.js -s Model -im -i assert -p tinyify",
-    "build": "tsc -d && cp dist/model.js dist/model.min.js",
+    "build": "tsc -d",
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm i && npm run build && npm test",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"` && echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION && git push && git tag v$REPO_VERSION && git push --tags;",
     "repo-publish": "npm run clean && npm i && npm run repo-publish-quick",
-    "repo-publish-quick": "npm run build && npm run test && npm run repo-tag && npm publish --registry http://registry.npmjs.org --access=public"
+    "repo-publish-quick": "npm run build && npm run test && npm run repo-tag && npm publish --registry https://registry.npmjs.org --access=public"
   },
   "license": "MIT",
   "files": [
-    "model.ts",
+    "system.ts",
     "lib",
     "dist",
-    "bin",
-    "model",
     "LICENSE"
   ],
   "dependencies": {
-    "aontu": "rjrodger/aontu",
-    "chokidar": "^3.5.3"
   },
   "devDependencies": {
-    "@types/jest": "^27.4.1",
-    "jest": "^27.5.1",
+    "@types/jest": "^27.5.0",
+    "jest": "^28.0.3",
     "tinyify": "^3.0.0",
-    "ts-jest": "^27.1.4",
-    "typescript": "^4.6.3",
-    "@hapi/code": "^8.0.7",
-    "@hapi/lab": "^24.5.1",
-    "lab-transform-typescript": "^3.0.1"
+    "ts-jest": "^28.0.1",
+    "typescript": "^4.6.4",
+    "esbuild": "^0.14.38",
+    "esbuild-jest": "^0.5.0"
   }
 }
