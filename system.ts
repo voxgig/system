@@ -1,5 +1,10 @@
 /* Copyright © 2022 Voxgig Ltd, MIT License. */
 
+
+import Path from 'path'
+import Fs from 'fs'
+
+
 import type {
   Msg,
 } from './lib/types'
@@ -13,7 +18,8 @@ const { srvmsgs } = Utility
 
 
 function messages(seneca: any, options: any, reload: any) {
-  let srvname = seneca.fixedargs.plugin$.name
+  let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '')
+
   let model = seneca.context.model
   let srvmodel = model.main.srv[srvname]
 
@@ -38,11 +44,47 @@ function actpath(msg: Msg) {
 }
 
 
+function prepare(seneca: any, require: any) {
+  let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '')
+
+  try {
+    const makePrepare = require('./' + srvname + '-prepare.js')
+    seneca.prepare(makePrepare())
+  }
+  catch (e: any) {
+    if ('MODULE_NOT_FOUND' !== e.code) {
+      throw e
+    }
+  }
+}
+
+
+
+function Local(this: any, options: any) {
+  const model = this.context.model
+  const folder = options.srv.folder
+
+  for (const entry of Object.entries(model.main.srv)) {
+    let name: string = entry[0]
+    let srv: any = entry[1]
+
+    let srvpath = Path.join(folder, name, name + '-srv.js')
+
+    if (Fs.existsSync(srvpath)) {
+      this.root.use(srvpath, srv.options)
+    }
+    else {
+      this.log.warn('srv-not-found', { name, srvpath: srvpath })
+    }
+  }
+
+}
 
 
 
 const System = {
-  messages
+  messages,
+  prepare,
 }
 
 
@@ -54,4 +96,5 @@ export {
   System,
   MakeSrv,
   Utility,
+  Local,
 }

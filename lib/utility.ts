@@ -12,23 +12,18 @@ const Seneca = require('seneca')
 // TODO: perform this during model build?
 function srvmsgs(srv: Record<string, any>, model: Record<string, any>): Msg[] {
   const allmsgs = listmsgs(model.main.msg)
-  // console.log(allmsgs)
 
   const allpat = Seneca.util.Patrun()
   allmsgs.forEach((msg: Msg) => allpat.add(msg.props, msg))
 
-  console.log(allpat.toString())
-
   // TODO: need an option to listmsgs to just list patterns
   const srvpats = listmsgs(srv.in).map(m => m.props)
-  console.log('SP', srvpats)
 
   const srvmsgs: Msg[] = []
   srvpats.reduce((a, pat) =>
   (a.push(...(allpat
     .list(pat)
     .map((o: any) => o.data) as Msg[])), a), srvmsgs)
-  console.log(srvmsgs)
 
   return srvmsgs
 }
