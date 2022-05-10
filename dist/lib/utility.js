@@ -2,6 +2,24 @@
 /* Copyright © 2022 Voxgig Ltd, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utility = void 0;
+const Seneca = require('seneca');
+// TODO: perform this during model build?
+function srvmsgs(srv, model) {
+    const allmsgs = listmsgs(model.main.msg);
+    // console.log(allmsgs)
+    const allpat = Seneca.util.Patrun();
+    allmsgs.forEach((msg) => allpat.add(msg.props, msg));
+    console.log(allpat.toString());
+    // TODO: need an option to listmsgs to just list patterns
+    const srvpats = listmsgs(srv.in).map(m => m.props);
+    console.log('SP', srvpats);
+    const srvmsgs = [];
+    srvpats.reduce((a, pat) => (a.push(...allpat
+        .list(pat)
+        .map((o) => o.data)), a), srvmsgs);
+    console.log(srvmsgs);
+    return srvmsgs;
+}
 function listmsgs(point) {
     if (null == point)
         return [];
@@ -9,7 +27,7 @@ function listmsgs(point) {
     walkmsgs(point, [], (path, meta) => {
         let msg = {
             pattern: path.map((part) => part[0] + ':' + part[1]).join(','),
-            props: path.reduce((a, part) => (a[part[0]] = a[part[1]], a), {}),
+            props: path.reduce((a, part) => (a[part[0]] = part[1], a), {}),
             meta,
         };
         msgs.push(msg);
@@ -18,7 +36,7 @@ function listmsgs(point) {
 }
 function walkmsgs(point, path, handle) {
     // console.log('WM', point, path)
-    let points = Object.entries(point);
+    let points = Object.entries(point).filter(entry => !entry[0].includes('$'));
     for (let step of points) {
         let key = step[0];
         // TODO: capture error log if step[1] empty (key with no vals)
@@ -28,11 +46,12 @@ function walkmsgs(point, path, handle) {
     }
     // if any $ meta props, or no points, we found a msg
     if (0 === points.length) {
-        const meta = { ...point };
+        const meta = point.$ || {};
         handle(path, meta);
     }
 }
 const Utility = {
+    srvmsgs,
     listmsgs,
 };
 exports.Utility = Utility;

@@ -6,6 +6,34 @@ import type {
 } from './types'
 
 
+const Seneca = require('seneca')
+
+
+// TODO: perform this during model build?
+function srvmsgs(srv: Record<string, any>, model: Record<string, any>): Msg[] {
+  const allmsgs = listmsgs(model.main.msg)
+  // console.log(allmsgs)
+
+  const allpat = Seneca.util.Patrun()
+  allmsgs.forEach((msg: Msg) => allpat.add(msg.props, msg))
+
+  console.log(allpat.toString())
+
+  // TODO: need an option to listmsgs to just list patterns
+  const srvpats = listmsgs(srv.in).map(m => m.props)
+  console.log('SP', srvpats)
+
+  const srvmsgs: Msg[] = []
+  srvpats.reduce((a, pat) =>
+  (a.push(...(allpat
+    .list(pat)
+    .map((o: any) => o.data) as Msg[])), a), srvmsgs)
+  console.log(srvmsgs)
+
+  return srvmsgs
+}
+
+
 function listmsgs(point?: Record<string, any>): Msg[] {
   if (null == point) return []
   let msgs: Msg[] = []
@@ -15,7 +43,7 @@ function listmsgs(point?: Record<string, any>): Msg[] {
       pattern:
         path.map((part: string[]) => part[0] + ':' + part[1]).join(','),
       props:
-        path.reduce((a: any, part: string[]) => (a[part[0]] = a[part[1]], a), {}),
+        path.reduce((a: any, part: string[]) => (a[part[0]] = part[1], a), {}),
       meta,
     }
     msgs.push(msg)
@@ -32,7 +60,7 @@ function walkmsgs(
 
   // console.log('WM', point, path)
 
-  let points = Object.entries(point)
+  let points = Object.entries(point).filter(entry => !entry[0].includes('$'))
   for (let step of points) {
     let key = step[0]
     // TODO: capture error log if step[1] empty (key with no vals)
@@ -43,7 +71,7 @@ function walkmsgs(
 
   // if any $ meta props, or no points, we found a msg
   if (0 === points.length) {
-    const meta = { ...point }
+    const meta = point.$ || {}
     handle(path, meta)
   }
 }
@@ -51,6 +79,7 @@ function walkmsgs(
 
 
 const Utility = {
+  srvmsgs,
   listmsgs,
 }
 

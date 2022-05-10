@@ -1,5 +1,9 @@
 import type { Msg } from './lib/types';
 import { Utility } from './lib/utility';
-declare const System: {};
+import { MakeSrv } from './srv/make';
+declare function messages(seneca: any, options: any, reload: any): void;
+declare const System: {
+    messages: typeof messages;
+};
 export type { Msg };
-export { System, Utility, };
+export { System, MakeSrv, Utility, };
