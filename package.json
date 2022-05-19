@@ -4,7 +4,7 @@
   "main": "dist/system.js",
   "type": "commonjs",
   "types": "dist/system.d.ts",
-  "description": "System.",
+  "description": "Voxgig System.",
   "homepage": "https://github.com/voxgig/system",
   "keywords": [
     "system"
@@ -35,13 +35,13 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@types/jest": "^27.5.0",
-    "esbuild": "^0.14.38",
+    "@types/jest": "^27.5.1",
+    "esbuild": "^0.14.39",
     "esbuild-jest": "^0.5.0",
-    "jest": "^28.0.3",
-    "seneca": "^3.26.2",
+    "jest": "^28.1.0",
+    "seneca": "^3.27.1",
     "tinyify": "^3.0.0",
-    "ts-jest": "^28.0.1",
+    "ts-jest": "^28.0.2",
     "typescript": "^4.6.4"
   }
 }
