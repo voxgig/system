@@ -2,11 +2,13 @@
 /* Copyright © 2022 Voxgig Ltd, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utility = void 0;
-const Seneca = require('seneca');
+// const Seneca = require('seneca')
+const Patrun = require('patrun');
 // TODO: perform this during model build?
 function srvmsgs(srv, model) {
     const allmsgs = listmsgs(model.main.msg);
-    const allpat = Seneca.util.Patrun();
+    // const allpat = Seneca.util.Patrun()
+    const allpat = Patrun();
     allmsgs.forEach((msg) => allpat.add(msg.props, msg));
     // TODO: need an option to listmsgs to just list patterns
     const srvpats = listmsgs(srv.in).map(m => m.props);

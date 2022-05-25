@@ -1,12 +1,13 @@
 {
   "name": "@voxgig/system",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "main": "dist/system.js",
   "type": "commonjs",
   "types": "dist/system.d.ts",
   "description": "Voxgig System.",
   "homepage": "https://github.com/voxgig/system",
   "keywords": [
+    "voxgig",
     "system"
   ],
   "author": "Richard Rodger (http://richardrodger.com)",
@@ -39,9 +40,10 @@
     "esbuild": "^0.14.39",
     "esbuild-jest": "^0.5.0",
     "jest": "^28.1.0",
-    "seneca": "^3.27.1",
-    "tinyify": "^3.0.0",
-    "ts-jest": "^28.0.2",
-    "typescript": "^4.6.4"
+    "ts-jest": "^28.0.3",
+    "typescript": "^4.7.2"
+  },
+  "dependencies": {
+    "patrun": "^7.1.0"
   }
 }

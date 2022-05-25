@@ -6,14 +6,16 @@ import type {
 } from './types'
 
 
-const Seneca = require('seneca')
+// const Seneca = require('seneca')
+const Patrun = require('patrun')
 
 
 // TODO: perform this during model build?
 function srvmsgs(srv: Record<string, any>, model: Record<string, any>): Msg[] {
   const allmsgs = listmsgs(model.main.msg)
 
-  const allpat = Seneca.util.Patrun()
+  // const allpat = Seneca.util.Patrun()
+  const allpat = Patrun()
   allmsgs.forEach((msg: Msg) => allpat.add(msg.props, msg))
 
   // TODO: need an option to listmsgs to just list patterns
