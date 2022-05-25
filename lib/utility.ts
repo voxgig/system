@@ -55,7 +55,8 @@ function walkmsgs(
 
   // console.log('WM', point, path)
 
-  let points = Object.entries(point).filter(entry => !entry[0].includes('$'))
+  let points = 'object' === typeof point ?
+    Object.entries(point).filter(entry => !entry[0].includes('$')) : []
   for (let step of points) {
     let key = step[0]
     // TODO: capture error log if step[1] empty (key with no vals)

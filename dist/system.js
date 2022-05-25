@@ -17,6 +17,7 @@ function messages(seneca, options, reload) {
     let model = seneca.context.model;
     let srvmodel = model.main.srv[srvname];
     let msgs = srvmsgs(srvmodel, model);
+    console.log('SYSTEM: MESSAGES FOUND', srvname, msgs);
     for (let msg of msgs) {
         seneca.message(msg.pattern, reload(actpath(msg), { options }));
     }
