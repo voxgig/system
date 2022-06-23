@@ -2,6 +2,7 @@
 /* Copyright © 2022 Voxgig Ltd, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utility = void 0;
+const jsonic_next_1 = require("@jsonic/jsonic-next");
 // const Seneca = require('seneca')
 const Patrun = require('patrun');
 // TODO: perform this during model build?
@@ -52,6 +53,7 @@ function walkmsgs(point, path, handle) {
 const Utility = {
     srvmsgs,
     listmsgs,
+    deep: jsonic_next_1.util.deep,
 };
 exports.Utility = Utility;
 //# sourceMappingURL=utility.js.map

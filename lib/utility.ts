@@ -5,6 +5,8 @@ import type {
   Msg
 } from './types'
 
+import { util } from '@jsonic/jsonic-next'
+
 
 // const Seneca = require('seneca')
 const Patrun = require('patrun')
@@ -79,6 +81,7 @@ function walkmsgs(
 const Utility = {
   srvmsgs,
   listmsgs,
+  deep: util.deep,
 }
 
 

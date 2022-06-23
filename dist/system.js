@@ -11,7 +11,7 @@ const utility_1 = require("./lib/utility");
 Object.defineProperty(exports, "Utility", { enumerable: true, get: function () { return utility_1.Utility; } });
 const make_1 = require("./srv/make");
 Object.defineProperty(exports, "MakeSrv", { enumerable: true, get: function () { return make_1.MakeSrv; } });
-const { srvmsgs } = utility_1.Utility;
+const { srvmsgs, deep } = utility_1.Utility;
 function messages(seneca, options, reload) {
     let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '');
     let model = seneca.context.model;
@@ -46,12 +46,15 @@ function prepare(seneca, require) {
 function Local(options) {
     const model = this.context.model;
     const folder = options.srv.folder;
+    // index by srv name, overrides model
+    const srvOptions = options.options || {};
     for (const entry of Object.entries(model.main.srv)) {
         let name = entry[0];
         let srv = entry[1];
         let srvpath = path_1.default.join(folder, name, name + '-srv.js');
         if (fs_1.default.existsSync(srvpath)) {
-            this.root.use(srvpath, srv.options);
+            let srvopts = deep({}, srv.options, srvOptions[name]);
+            this.root.use(srvpath, srvopts);
         }
         else {
             this.log.warn('srv-not-found', { name, srvpath: srvpath });

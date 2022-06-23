@@ -14,7 +14,7 @@ import { Utility } from './lib/utility'
 import { MakeSrv } from './srv/make'
 
 
-const { srvmsgs } = Utility
+const { srvmsgs, deep } = Utility
 
 
 function messages(seneca: any, options: any, reload: any) {
@@ -65,6 +65,9 @@ function Local(this: any, options: any) {
   const model = this.context.model
   const folder = options.srv.folder
 
+  // index by srv name, overrides model
+  const srvOptions = options.options || {}
+
   for (const entry of Object.entries(model.main.srv)) {
     let name: string = entry[0]
     let srv: any = entry[1]
@@ -72,7 +75,8 @@ function Local(this: any, options: any) {
     let srvpath = Path.join(folder, name, name + '-srv.js')
 
     if (Fs.existsSync(srvpath)) {
-      this.root.use(srvpath, srv.options)
+      let srvopts = deep({}, srv.options, srvOptions[name])
+      this.root.use(srvpath, srvopts)
     }
     else {
       this.log.warn('srv-not-found', { name, srvpath: srvpath })
