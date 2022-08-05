@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Local = exports.Utility = exports.MakeSrv = exports.System = void 0;
+exports.Live = exports.Local = exports.Utility = exports.MakeSrv = exports.System = void 0;
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const utility_1 = require("./lib/utility");
@@ -62,6 +62,41 @@ function Local(options) {
     }
 }
 exports.Local = Local;
+function Live(options) {
+    const model = this.context.model;
+    const srvname = options.srv.name;
+    let srvdef = model.main.srv[srvname];
+    srvdef.name = srvname;
+    let deps = srvdef.deps;
+    let srvs = Object
+        .entries(deps)
+        .reduce(((srvdefs, dep) => {
+        let depname = dep[0];
+        let depsrv = model.main.srv[depname];
+        depsrv.name = depname;
+        srvdefs.push(depsrv);
+        return srvdefs;
+    }), []);
+    srvs.push(srvdef);
+    useSrvs(this, srvs, options, model);
+}
+exports.Live = Live;
+function useSrvs(seneca, srvs, options, model) {
+    const folder = options.srv.folder;
+    // index by srv name, overrides model
+    const srvOptions = options.options || {};
+    for (const srv of srvs) {
+        let name = srv.name;
+        let srvpath = path_1.default.join(folder, name, name + '-srv.js');
+        if (fs_1.default.existsSync(srvpath)) {
+            let srvopts = deep({}, srv.options, srvOptions[name]);
+            seneca.root.use(srvpath, srvopts);
+        }
+        else {
+            seneca.log.warn('srv-not-found', { name, srvpath: srvpath });
+        }
+    }
+}
 const System = {
     messages,
     prepare,

@@ -86,6 +86,67 @@ function Local(this: any, options: any) {
 }
 
 
+type LiveOptions = {
+  srv: {
+    name: string,
+    folder: string,
+  },
+
+  // Srv options by name
+  options: Record<string, any>
+}
+
+
+function Live(
+  this: any,
+  options: LiveOptions
+) {
+  const model = this.context.model
+  const srvname = options.srv.name
+
+  let srvdef = model.main.srv[srvname]
+  srvdef.name = srvname
+
+  let deps = srvdef.deps
+
+  let srvs = Object
+    .entries(deps)
+    .reduce(((srvdefs, dep) => {
+      let depname = dep[0]
+      let depsrv = model.main.srv[depname]
+      depsrv.name = depname
+      srvdefs.push(depsrv)
+      return srvdefs
+    }), ([] as any[]))
+
+  srvs.push(srvdef)
+
+  useSrvs(this, srvs, options, model)
+}
+
+
+function useSrvs(seneca: any, srvs: any[], options: LiveOptions, model: any) {
+  const folder = options.srv.folder
+
+  // index by srv name, overrides model
+  const srvOptions = options.options || {}
+
+  for (const srv of srvs) {
+    let name = srv.name
+    let srvpath = Path.join(folder, name, name + '-srv.js')
+
+    if (Fs.existsSync(srvpath)) {
+      let srvopts = deep({}, srv.options, srvOptions[name])
+      seneca.root.use(srvpath, srvopts)
+    }
+    else {
+      seneca.log.warn('srv-not-found', { name, srvpath: srvpath })
+    }
+  }
+
+}
+
+
 
 const System = {
   messages,
@@ -102,4 +163,5 @@ export {
   MakeSrv,
   Utility,
   Local,
+  Live,
 }
