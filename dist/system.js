@@ -67,7 +67,7 @@ function Live(options) {
     const srvname = options.srv.name;
     let srvdef = model.main.srv[srvname];
     srvdef.name = srvname;
-    let deps = srvdef.deps;
+    let deps = srvdef.deps || {};
     let srvs = Object
         .entries(deps)
         .reduce(((srvdefs, dep) => {
