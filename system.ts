@@ -24,7 +24,8 @@ function messages(seneca: any, options: any, reload: any) {
   let srvmodel = model.main.srv[srvname]
 
   let msgs = srvmsgs(srvmodel, model)
-  console.log('SYSTEM: MESSAGES FOUND', srvname, msgs)
+  console.log('SYSTEM: MESSAGES FOUND', srvname,
+              msgs.map(m=>m.pattern))
 
   for (let msg of msgs) {
     seneca.message(msg.pattern, reload(actpath(msg), { options }))
@@ -103,7 +104,7 @@ function Live(
 ) {
   const model = this.context.model
   const srvname = options.srv.name
-
+  
   let srvdef = model.main.srv[srvname]
   srvdef.name = srvname
 

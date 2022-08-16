@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/system",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "main": "dist/system.js",
   "type": "commonjs",
   "types": "dist/system.d.ts",
@@ -36,11 +36,11 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "@types/jest": "^28.1.6",
-    "esbuild": "^0.14.53",
+    "@types/jest": "^28.1.7",
+    "esbuild": "^0.15.3",
     "esbuild-jest": "^0.5.0",
     "jest": "^28.1.3",
-    "ts-jest": "^28.0.7",
+    "ts-jest": "^28.0.8",
     "typescript": "^4.7.4"
   },
   "dependencies": {
