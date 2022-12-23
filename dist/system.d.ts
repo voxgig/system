@@ -4,7 +4,7 @@ import { MakeSrv } from './srv/make';
 declare function messages(seneca: any, options: any, reload: any): void;
 declare function prepare(seneca: any, require: any): void;
 declare function Local(this: any, options: any): void;
-declare type LiveOptions = {
+type LiveOptions = {
     srv: {
         name: string;
         folder: string;
