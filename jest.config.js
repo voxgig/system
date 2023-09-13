@@ -1,9 +1,8 @@
 module.exports = {
-  "roots": [
-    "<rootDir>/test"
-  ],
-  "coverageDirectory":"<rootDir>/test/cov",
-  "transform": {
-    "^.+\\.ts$": "ts-jest"
-  }
+  transform: {
+    "^.+\\.tsx?$": "es-jest"
+  },
+  testEnvironment: 'node',
+  testMatch: ['**/test/**/*.test.ts'],
+  watchPathIgnorePatterns: ['.*.js$'],
 }

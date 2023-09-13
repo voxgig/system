@@ -70,7 +70,7 @@ function walkmsgs(
   }
 
   // if any $ meta props, or no points, we found a msg
-  if (0 === points.length) {
+  if (0 === points.length || point.$) {
     const meta = point.$ || {}
     handle(path, meta)
   }

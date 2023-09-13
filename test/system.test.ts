@@ -73,6 +73,12 @@ describe('system', () => {
     }).map(m => m.pattern))
       .toEqual(['a:b', 'a:c,g:j,l:m', 'd:e', 'd:f', 'd:h,i:k'])
 
+    expect(listmsgs({
+      a: { b: { $: {}, c: { d: {} } } }
+    }).map(m => m.pattern))
+      .toEqual(['a:b,c:d', 'a:b'])
+
+
   })
 
 
