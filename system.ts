@@ -50,7 +50,7 @@ function prepare(seneca: any, require: any) {
   let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '')
 
   try {
-    const makePrepare = require('./' + srvname + '-prepare.js')
+    const makePrepare = require('./' + srvname + '-prepare')
     seneca.prepare(makePrepare())
   }
   catch (e: any) {
@@ -73,7 +73,7 @@ function Local(this: any, options: any) {
     let name: string = entry[0]
     let srv: any = entry[1]
 
-    let srvpath = Path.join(folder, name, name + '-srv.js')
+    let srvpath = Path.join(folder, name, name + '-srv')
 
     if (Fs.existsSync(srvpath)) {
       let srvopts = deep({}, srv.options, srvOptions[name])
@@ -134,7 +134,7 @@ function useSrvs(seneca: any, srvs: any[], options: LiveOptions, model: any) {
 
   for (const srv of srvs) {
     let name = srv.name
-    let srvpath = Path.join(folder, name, name + '-srv.js')
+    let srvpath = Path.join(folder, name, name + '-srv')
 
     if (Fs.existsSync(srvpath)) {
       let srvopts = deep({}, srv.options, srvOptions[name])

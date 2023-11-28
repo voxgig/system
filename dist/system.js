@@ -35,7 +35,7 @@ function actpath(msg) {
 function prepare(seneca, require) {
     let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '');
     try {
-        const makePrepare = require('./' + srvname + '-prepare.js');
+        const makePrepare = require('./' + srvname + '-prepare');
         seneca.prepare(makePrepare());
     }
     catch (e) {
@@ -52,7 +52,7 @@ function Local(options) {
     for (const entry of Object.entries(model.main.srv)) {
         let name = entry[0];
         let srv = entry[1];
-        let srvpath = path_1.default.join(folder, name, name + '-srv.js');
+        let srvpath = path_1.default.join(folder, name, name + '-srv');
         if (fs_1.default.existsSync(srvpath)) {
             let srvopts = deep({}, srv.options, srvOptions[name]);
             this.root.use(srvpath, srvopts);
@@ -88,7 +88,7 @@ function useSrvs(seneca, srvs, options, model) {
     const srvOptions = options.options || {};
     for (const srv of srvs) {
         let name = srv.name;
-        let srvpath = path_1.default.join(folder, name, name + '-srv.js');
+        let srvpath = path_1.default.join(folder, name, name + '-srv');
         if (fs_1.default.existsSync(srvpath)) {
             let srvopts = deep({}, srv.options, srvOptions[name]);
             seneca.root.use(srvpath, srvopts);
