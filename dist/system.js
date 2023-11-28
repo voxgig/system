@@ -52,7 +52,7 @@ function Local(options) {
     for (const entry of Object.entries(model.main.srv)) {
         let name = entry[0];
         let srv = entry[1];
-        let srvpath = path_1.default.join(folder, name, name + '-srv');
+        let srvpath = path_1.default.join(folder, name, name + '-srv.js');
         if (fs_1.default.existsSync(srvpath)) {
             let srvopts = deep({}, srv.options, srvOptions[name]);
             this.root.use(srvpath, srvopts);
@@ -88,7 +88,7 @@ function useSrvs(seneca, srvs, options, model) {
     const srvOptions = options.options || {};
     for (const srv of srvs) {
         let name = srv.name;
-        let srvpath = path_1.default.join(folder, name, name + '-srv');
+        let srvpath = path_1.default.join(folder, name, name + '-srv.js');
         if (fs_1.default.existsSync(srvpath)) {
             let srvopts = deep({}, srv.options, srvOptions[name]);
             seneca.root.use(srvpath, srvopts);

@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/system",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "main": "dist/system.js",
   "type": "commonjs",
   "types": "dist/system.d.ts",

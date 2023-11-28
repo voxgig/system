@@ -73,7 +73,7 @@ function Local(this: any, options: any) {
     let name: string = entry[0]
     let srv: any = entry[1]
 
-    let srvpath = Path.join(folder, name, name + '-srv')
+    let srvpath = Path.join(folder, name, name + '-srv.js')
 
     if (Fs.existsSync(srvpath)) {
       let srvopts = deep({}, srv.options, srvOptions[name])
@@ -134,7 +134,7 @@ function useSrvs(seneca: any, srvs: any[], options: LiveOptions, model: any) {
 
   for (const srv of srvs) {
     let name = srv.name
-    let srvpath = Path.join(folder, name, name + '-srv')
+    let srvpath = Path.join(folder, name, name + '-srv.js')
 
     if (Fs.existsSync(srvpath)) {
       let srvopts = deep({}, srv.options, srvOptions[name])
