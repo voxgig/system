@@ -22,14 +22,51 @@ function messages(seneca: any, options: any, reload: any) {
 
   let model = seneca.context.model
   let srvmodel = model.main.srv[srvname]
-
   let msgs = srvmsgs(srvmodel, model)
-  // console.log('SYSTEM: MESSAGES FOUND', srvname,
-  //             msgs.map(m=>m.pattern))
 
   for (let msg of msgs) {
-    seneca.message(msg.pattern, reload(actpath(msg), { options }))
+    let action: Function = reload(actpath(msg), { options })
+
+    let params = {}
+
+    if (msg.meta.params) {
+      let shape = gubuify(seneca.util.deep(msg.meta.params), seneca.util.Gubu)
+      params = shape.node().v
+    }
+
+    seneca.message(msg.pattern, params, action)
   }
+}
+
+
+// Convert string values into Gubu builder expressions.
+function gubuify(params: any, Gubu: any) {
+  if (null == params) {
+    return params
+  }
+
+  for (let pn in params) {
+    let m = null
+    let pv = params[pn]
+    if ('object' === typeof pv) {
+      params[pn] = gubuify(pv, Gubu)
+    }
+    else if (
+      'string' === typeof pv &&
+      -1 === pn.indexOf(':') && (
+        'function' === typeof Gubu[(m = ((pv.match(/\s*([A-Z]\w+)([(.\s]|$)/) || []))[1])] ||
+        ({ String: 1, Number: 1, Boolean: 1 }[m])
+      )
+    ) {
+      let png = pn + ':' + pv
+      params[png] = pv
+      delete params[pn]
+    }
+    else {
+      params[pn] = Gubu(pv)
+    }
+  }
+  return Gubu(params)
 }
 
 
@@ -160,6 +197,7 @@ export type {
 }
 
 export {
+  gubuify,
   System,
   MakeSrv,
   Utility,

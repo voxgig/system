@@ -8,21 +8,18 @@ import type {
 import { util } from '@jsonic/jsonic-next'
 
 
-// const Seneca = require('seneca')
-const Patrun = require('patrun')
+
+import Patrun from 'patrun'
 
 
 // TODO: perform this during model build?
 function srvmsgs(srv: Record<string, any>, model: Record<string, any>): Msg[] {
   const allmsgs = listmsgs(model.main.msg)
-
-  // const allpat = Seneca.util.Patrun()
-  const allpat = Patrun()
+  const allpat = Patrun({})
   allmsgs.forEach((msg: Msg) => allpat.add(msg.props, msg))
 
   // TODO: need an option to listmsgs to just list patterns
   const srvpats = listmsgs(srv.in).map(m => m.props)
-
   const srvmsgs: Msg[] = []
   srvpats.reduce((a, pat) =>
   (a.push(...(allpat

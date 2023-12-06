@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Live = exports.Local = exports.Utility = exports.MakeSrv = exports.System = void 0;
+exports.Live = exports.Local = exports.Utility = exports.MakeSrv = exports.System = exports.gubuify = void 0;
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const utility_1 = require("./lib/utility");
@@ -17,12 +17,41 @@ function messages(seneca, options, reload) {
     let model = seneca.context.model;
     let srvmodel = model.main.srv[srvname];
     let msgs = srvmsgs(srvmodel, model);
-    // console.log('SYSTEM: MESSAGES FOUND', srvname,
-    //             msgs.map(m=>m.pattern))
     for (let msg of msgs) {
-        seneca.message(msg.pattern, reload(actpath(msg), { options }));
+        let action = reload(actpath(msg), { options });
+        let params = {};
+        if (msg.meta.params) {
+            let shape = gubuify(seneca.util.deep(msg.meta.params), seneca.util.Gubu);
+            params = shape.node().v;
+        }
+        seneca.message(msg.pattern, params, action);
     }
 }
+// Convert string values into Gubu builder expressions.
+function gubuify(params, Gubu) {
+    if (null == params) {
+        return params;
+    }
+    for (let pn in params) {
+        let m = null;
+        let pv = params[pn];
+        if ('object' === typeof pv) {
+            params[pn] = gubuify(pv, Gubu);
+        }
+        else if ('string' === typeof pv &&
+            -1 === pn.indexOf(':') && ('function' === typeof Gubu[(m = ((pv.match(/\s*([A-Z]\w+)([(.\s]|$)/) || []))[1])] ||
+            ({ String: 1, Number: 1, Boolean: 1 }[m]))) {
+            let png = pn + ':' + pv;
+            params[png] = pv;
+            delete params[pn];
+        }
+        else {
+            params[pn] = Gubu(pv);
+        }
+    }
+    return Gubu(params);
+}
+exports.gubuify = gubuify;
 function actpath(msg) {
     if (msg.meta.file) {
         return msg.meta.file;
