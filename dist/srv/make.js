@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MakeSrv = void 0;
+exports.MakeSrv = MakeSrv;
 const system_1 = require("../system");
 function MakeSrv(name, require) {
     const srv = function (options) {
@@ -11,5 +11,4 @@ function MakeSrv(name, require) {
     Object.defineProperty(srv, 'name', { value: 'srv_' + name });
     return srv;
 }
-exports.MakeSrv = MakeSrv;
 //# sourceMappingURL=make.js.map

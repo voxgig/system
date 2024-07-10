@@ -13,6 +13,8 @@ import { Utility } from './lib/utility'
 
 import { MakeSrv } from './srv/make'
 
+import { Structure } from './lib/structure'
+
 
 const { srvmsgs, deep } = Utility
 
@@ -203,4 +205,5 @@ export {
   Utility,
   Local,
   Live,
+  Structure,
 }

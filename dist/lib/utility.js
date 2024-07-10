@@ -35,7 +35,6 @@ function listmsgs(point) {
     return msgs;
 }
 function walkmsgs(point, path, handle) {
-    // console.log('WM', point, path)
     let points = 'object' === typeof point ?
         Object.entries(point).filter(entry => !entry[0].includes('$')) : [];
     for (let step of points) {

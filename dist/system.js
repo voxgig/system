@@ -4,13 +4,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Live = exports.Local = exports.Utility = exports.MakeSrv = exports.System = exports.gubuify = void 0;
+exports.Structure = exports.Utility = exports.MakeSrv = exports.System = void 0;
+exports.gubuify = gubuify;
+exports.Local = Local;
+exports.Live = Live;
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const utility_1 = require("./lib/utility");
 Object.defineProperty(exports, "Utility", { enumerable: true, get: function () { return utility_1.Utility; } });
 const make_1 = require("./srv/make");
 Object.defineProperty(exports, "MakeSrv", { enumerable: true, get: function () { return make_1.MakeSrv; } });
+const structure_1 = require("./lib/structure");
+Object.defineProperty(exports, "Structure", { enumerable: true, get: function () { return structure_1.Structure; } });
 const { srvmsgs, deep } = utility_1.Utility;
 function messages(seneca, options, reload) {
     let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '');
@@ -51,7 +56,6 @@ function gubuify(params, Gubu) {
     }
     return Gubu(params);
 }
-exports.gubuify = gubuify;
 function actpath(msg) {
     if (msg.meta.file) {
         return msg.meta.file;
@@ -91,7 +95,6 @@ function Local(options) {
         }
     }
 }
-exports.Local = Local;
 function Live(options) {
     const model = this.context.model;
     const srvname = options.srv.name;
@@ -110,7 +113,6 @@ function Live(options) {
     srvs.push(srvdef);
     useSrvs(this, srvs, options, model);
 }
-exports.Live = Live;
 function useSrvs(seneca, srvs, options, model) {
     const folder = options.srv.folder;
     // index by srv name, overrides model
