@@ -1,7 +1,6 @@
 import type { Msg } from './lib/types';
 import { Utility } from './lib/utility';
 import { MakeSrv } from './srv/make';
-import { Structure } from './lib/structure';
 declare function messages(seneca: any, options: any, reload: any): void;
 declare function gubuify(params: any, Gubu: any): any;
 declare function prepare(seneca: any, require: any): void;
@@ -19,4 +18,4 @@ declare const System: {
     prepare: typeof prepare;
 };
 export type { Msg };
-export { gubuify, System, MakeSrv, Utility, Local, Live, Structure, };
+export { gubuify, System, MakeSrv, Utility, Local, Live, };
