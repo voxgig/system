@@ -76,7 +76,7 @@ function walkmsgs(
 const Utility = {
   srvmsgs,
   listmsgs,
-  deep: util.deep,
+  deep: util.deep as (base?: any, ...rest: any[]) => any,
 }
 
 
