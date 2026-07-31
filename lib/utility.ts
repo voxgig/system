@@ -5,7 +5,7 @@ import type {
   Msg
 } from './types'
 
-import { util } from '@jsonic/jsonic-next'
+import { util } from '@tabnas/jsonic'
 
 
 

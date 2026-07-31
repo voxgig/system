@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utility = void 0;
-const jsonic_next_1 = require("@jsonic/jsonic-next");
+const jsonic_1 = require("@tabnas/jsonic");
 const patrun_1 = __importDefault(require("patrun"));
 // TODO: perform this during model build?
 function srvmsgs(srv, model) {
@@ -53,7 +53,7 @@ function walkmsgs(point, path, handle) {
 const Utility = {
     srvmsgs,
     listmsgs,
-    deep: jsonic_next_1.util.deep,
+    deep: jsonic_1.util.deep,
 };
 exports.Utility = Utility;
 //# sourceMappingURL=utility.js.map

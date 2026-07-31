@@ -21,11 +21,14 @@ exports.fmt = fmt;
 // element with config options.
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
-const jsonic_next_1 = require("@jsonic/jsonic-next");
+const jsonic_1 = require("@tabnas/jsonic");
 // Values emitted bare (aontu type/token names); everything else is quoted.
 const BARE_TOKENS = ['String', 'Number', 'Boolean', 'Skip'];
+// Model sources use the .aontu extension; .jsonic is legacy.
+const MODEL_EXTS = ['aontu', 'jsonic'];
 // Locate the model folder from a starting folder: <start>/model,
-// <start>/backend/model, or <start> itself if it holds model.jsonic.
+// <start>/backend/model, or <start> itself if it holds model.aontu
+// (or legacy model.jsonic).
 function resolveModelFolder(start) {
     const candidates = [
         start,
@@ -33,29 +36,48 @@ function resolveModelFolder(start) {
         node_path_1.default.join(start, 'backend', 'model'),
     ];
     for (const c of candidates) {
-        if (node_fs_1.default.existsSync(node_path_1.default.join(c, 'model.jsonic'))) {
-            return c;
+        for (const ext of MODEL_EXTS) {
+            if (node_fs_1.default.existsSync(node_path_1.default.join(c, 'model.' + ext))) {
+                return c;
+            }
         }
     }
-    throw new Error('model folder not found (looked for model.jsonic in ' +
+    throw new Error('model folder not found (looked for model.aontu in ' +
         candidates.join(', ') + ')');
 }
 // Resolve the entity/message/service source files from the @"file" refs
-// in model.jsonic (main: ent: @"..."), falling back to conventional names.
+// in the root model file (main: ent: @"..."), falling back to
+// conventional names.
 function resolveModelFiles(start) {
     const folder = resolveModelFolder(start);
-    const model = node_path_1.default.join(folder, 'model.jsonic');
+    let model = node_path_1.default.join(folder, 'model.' + MODEL_EXTS[0]);
+    for (const ext of MODEL_EXTS) {
+        const p = node_path_1.default.join(folder, 'model.' + ext);
+        if (node_fs_1.default.existsSync(p)) {
+            model = p;
+            break;
+        }
+    }
     const src = node_fs_1.default.readFileSync(model, 'utf8');
-    const ref = (key, fallback) => {
+    const ref = (key, base) => {
         const m = src.match(new RegExp('main:\\s*' + key + ':\\s*@"([^"]+)"'));
-        return node_path_1.default.join(folder, m ? m[1] : fallback);
+        if (m) {
+            return node_path_1.default.join(folder, m[1]);
+        }
+        for (const ext of MODEL_EXTS) {
+            const p = node_path_1.default.join(folder, base + '.' + ext);
+            if (node_fs_1.default.existsSync(p)) {
+                return p;
+            }
+        }
+        return node_path_1.default.join(folder, base + '.' + MODEL_EXTS[0]);
     };
     return {
         folder,
         model,
-        ent: ref('ent', 'ent.jsonic'),
-        msg: ref('msg', 'msg.jsonic'),
-        srv: ref('srv', 'srv.jsonic'),
+        ent: ref('ent', 'ent'),
+        msg: ref('msg', 'msg'),
+        srv: ref('srv', 'srv'),
     };
 }
 // Format a value as jsonic source. Objects use multiline path-free style;
@@ -100,7 +122,7 @@ function append(file, text) {
 function parseArg(arg, kind) {
     let parsed;
     try {
-        parsed = (0, jsonic_next_1.Jsonic)(arg);
+        parsed = (0, jsonic_1.Jsonic)(arg);
     }
     catch (e) {
         throw new Error('invalid ' + kind + ' argument (jsonic parse failed): ' +
@@ -196,7 +218,7 @@ function addMsg(start, arg) {
     const pathform = /^[a-z0-9_-]+([.:/][a-z0-9_-]+)+$/i.test(arg.trim());
     let parsed;
     try {
-        parsed = pathform ? arg.trim() : (0, jsonic_next_1.Jsonic)(arg);
+        parsed = pathform ? arg.trim() : (0, jsonic_1.Jsonic)(arg);
     }
     catch (e) {
         throw new Error('invalid msg argument (jsonic parse failed): ' +
@@ -250,7 +272,7 @@ function addFields(start, entref, fieldargs) {
     for (const arg of fieldargs) {
         let parsed;
         try {
-            parsed = (0, jsonic_next_1.Jsonic)(arg);
+            parsed = (0, jsonic_1.Jsonic)(arg);
         }
         catch (e) {
             throw new Error('invalid field argument (jsonic parse failed): ' +

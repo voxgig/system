@@ -12,7 +12,7 @@
 import Fs from 'node:fs'
 import Path from 'node:path'
 
-import { Jsonic } from '@jsonic/jsonic-next'
+import { Jsonic } from '@tabnas/jsonic'
 
 
 // Values emitted bare (aontu type/token names); everything else is quoted.
@@ -21,7 +21,7 @@ const BARE_TOKENS = ['String', 'Number', 'Boolean', 'Skip']
 
 export type ModelFiles = {
   folder: string       // the model folder
-  model: string        // model.jsonic path
+  model: string        // root model file path (model.aontu)
   ent: string          // entity file path
   msg: string          // message file path
   srv: string          // service file path
@@ -33,8 +33,12 @@ export type AddResult = {
 }
 
 
+// Model sources use the .aontu extension; .jsonic is legacy.
+const MODEL_EXTS = ['aontu', 'jsonic']
+
 // Locate the model folder from a starting folder: <start>/model,
-// <start>/backend/model, or <start> itself if it holds model.jsonic.
+// <start>/backend/model, or <start> itself if it holds model.aontu
+// (or legacy model.jsonic).
 function resolveModelFolder(start: string): string {
   const candidates = [
     start,
@@ -42,34 +46,54 @@ function resolveModelFolder(start: string): string {
     Path.join(start, 'backend', 'model'),
   ]
   for (const c of candidates) {
-    if (Fs.existsSync(Path.join(c, 'model.jsonic'))) {
-      return c
+    for (const ext of MODEL_EXTS) {
+      if (Fs.existsSync(Path.join(c, 'model.' + ext))) {
+        return c
+      }
     }
   }
-  throw new Error('model folder not found (looked for model.jsonic in ' +
+  throw new Error('model folder not found (looked for model.aontu in ' +
     candidates.join(', ') + ')')
 }
 
 
 // Resolve the entity/message/service source files from the @"file" refs
-// in model.jsonic (main: ent: @"..."), falling back to conventional names.
+// in the root model file (main: ent: @"..."), falling back to
+// conventional names.
 function resolveModelFiles(start: string): ModelFiles {
   const folder = resolveModelFolder(start)
-  const model = Path.join(folder, 'model.jsonic')
+
+  let model = Path.join(folder, 'model.' + MODEL_EXTS[0])
+  for (const ext of MODEL_EXTS) {
+    const p = Path.join(folder, 'model.' + ext)
+    if (Fs.existsSync(p)) {
+      model = p
+      break
+    }
+  }
   const src = Fs.readFileSync(model, 'utf8')
 
-  const ref = (key: string, fallback: string) => {
+  const ref = (key: string, base: string) => {
     const m = src.match(
       new RegExp('main:\\s*' + key + ':\\s*@"([^"]+)"'))
-    return Path.join(folder, m ? m[1] : fallback)
+    if (m) {
+      return Path.join(folder, m[1])
+    }
+    for (const ext of MODEL_EXTS) {
+      const p = Path.join(folder, base + '.' + ext)
+      if (Fs.existsSync(p)) {
+        return p
+      }
+    }
+    return Path.join(folder, base + '.' + MODEL_EXTS[0])
   }
 
   return {
     folder,
     model,
-    ent: ref('ent', 'ent.jsonic'),
-    msg: ref('msg', 'msg.jsonic'),
-    srv: ref('srv', 'srv.jsonic'),
+    ent: ref('ent', 'ent'),
+    msg: ref('msg', 'msg'),
+    srv: ref('srv', 'srv'),
   }
 }
 

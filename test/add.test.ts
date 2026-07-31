@@ -18,20 +18,20 @@ function makeProject(): string {
   const model = Path.join(root, 'backend', 'model')
   Fs.mkdirSync(model, { recursive: true })
 
-  Fs.writeFileSync(Path.join(model, 'model.jsonic'), `
-main: msg: @"msg.jsonic"
-main: srv: @"srv.jsonic"
-main: ent: @"ent.jsonic"
+  Fs.writeFileSync(Path.join(model, 'model.aontu'), `
+main: msg: @"msg.aontu"
+main: srv: @"srv.aontu"
+main: ent: @"ent.aontu"
 `)
-  Fs.writeFileSync(Path.join(model, 'ent.jsonic'), `
+  Fs.writeFileSync(Path.join(model, 'ent.aontu'), `
 sys: &: $.main.shape.ent
 
 sys: user: {
   field: {}
 }
 `)
-  Fs.writeFileSync(Path.join(model, 'msg.jsonic'), '\naim: {}\n')
-  Fs.writeFileSync(Path.join(model, 'srv.jsonic'),
+  Fs.writeFileSync(Path.join(model, 'msg.aontu'), '\naim: {}\n')
+  Fs.writeFileSync(Path.join(model, 'srv.aontu'),
     '\n&: $.sys.shape.srv.std_ts\n')
 
   return root
@@ -51,24 +51,42 @@ describe('add', () => {
     for (const start of [root, Path.join(root, 'backend'),
       Path.join(root, 'backend', 'model')]) {
       const files = resolveModelFiles(start)
-      expect(files.ent.endsWith('ent.jsonic')).toEqual(true)
-      expect(files.msg.endsWith('msg.jsonic')).toEqual(true)
-      expect(files.srv.endsWith('srv.jsonic')).toEqual(true)
+      expect(files.ent.endsWith('ent.aontu')).toEqual(true)
+      expect(files.msg.endsWith('msg.aontu')).toEqual(true)
+      expect(files.srv.endsWith('srv.aontu')).toEqual(true)
     }
+  })
+
+
+  test('resolve-legacy-jsonic', () => {
+    // legacy projects with .jsonic model files still resolve
+    const root = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'vgs-add-'))
+    const model = Path.join(root, 'model')
+    Fs.mkdirSync(model, { recursive: true })
+    Fs.writeFileSync(Path.join(model, 'model.jsonic'),
+      '\nmain: ent: @"ent.jsonic"\n')
+    Fs.writeFileSync(Path.join(model, 'ent.jsonic'), '\nsys: user: {}\n')
+    Fs.writeFileSync(Path.join(model, 'msg.jsonic'), '\naim: {}\n')
+    Fs.writeFileSync(Path.join(model, 'srv.jsonic'), '\n')
+
+    const files = resolveModelFiles(root)
+    expect(files.model.endsWith('model.jsonic')).toEqual(true)
+    expect(files.ent.endsWith('ent.jsonic')).toEqual(true)
+    expect(files.msg.endsWith('msg.jsonic')).toEqual(true)
   })
 
 
   test('add-entity-name', () => {
     const root = makeProject()
     addEntity(root, 'thing')
-    const ent = read(root, 'ent.jsonic')
+    const ent = read(root, 'ent.aontu')
     expect(ent).toContain('app: &: $.main.shape.ent')
     expect(ent).toContain('app: thing: {')
     expect(ent).toContain("'$$': 'Open'")
 
     // second entity in same zone: no duplicate zone shape line
     addEntity(root, 'other')
-    const ent2 = read(root, 'ent.jsonic')
+    const ent2 = read(root, 'ent.aontu')
     expect(ent2.match(/app: &: /g)!.length).toEqual(1)
     expect(ent2).toContain('app: other: {')
   })
@@ -77,10 +95,10 @@ describe('add', () => {
   test('add-entity-zone-and-spec', () => {
     const root = makeProject()
     addEntity(root, 'qaz/foo')
-    expect(read(root, 'ent.jsonic')).toContain('qaz: foo: {')
+    expect(read(root, 'ent.aontu')).toContain('qaz: foo: {')
 
     addEntity(root, '{name:bar,zone:qaz,field:{title:{kind:String}}}')
-    const ent = read(root, 'ent.jsonic')
+    const ent = read(root, 'ent.aontu')
     expect(ent).toContain('qaz: bar: {')
     expect(ent).toContain('kind: String')
     expect(ent.match(/qaz: &: /g)!.length).toEqual(1)
@@ -90,13 +108,13 @@ describe('add', () => {
   test('add-srv', () => {
     const root = makeProject()
     addSrv(root, 'thing')
-    const srv = read(root, 'srv.jsonic')
+    const srv = read(root, 'srv.aontu')
     expect(srv).toContain('thing: {')
     expect(srv).toContain("area: 'private/'")
     expect(srv).toContain('required: true')
 
     addSrv(root, '{name:pub,user:{required:false}}')
-    const srv2 = read(root, 'srv.jsonic')
+    const srv2 = read(root, 'srv.aontu')
     expect(srv2).toContain('pub: {')
     expect(srv2).toContain('required: false')
   })
@@ -105,13 +123,13 @@ describe('add', () => {
   test('add-msg', () => {
     const root = makeProject()
     addMsg(root, 'thing.get.info')
-    expect(read(root, 'msg.jsonic')).toContain('aim: thing: get: info: {}')
+    expect(read(root, 'msg.aontu')).toContain('aim: thing: get: info: {}')
 
     addMsg(root, 'aim:thing:list:item')
-    expect(read(root, 'msg.jsonic')).toContain('aim: thing: list: item: {}')
+    expect(read(root, 'msg.aontu')).toContain('aim: thing: list: item: {}')
 
     addMsg(root, "{name:thing.save.item,params:{item:{'$$':'Open',title:String}}}")
-    const msg = read(root, 'msg.jsonic')
+    const msg = read(root, 'msg.aontu')
     expect(msg).toContain("aim: thing: save: item: '$': {")
     expect(msg).toContain("'$$': 'Open'")
     expect(msg).toContain('title: String')
@@ -127,7 +145,7 @@ describe('add', () => {
       'note:{kind:String,valid:Skip}',
       'owner_id',
     ])
-    const ent = read(root, 'ent.jsonic')
+    const ent = read(root, 'ent.aontu')
     expect(ent).toContain('app: thing: field: title: {')
     expect(ent).toContain("label: 'Title'")
     expect(ent).toContain('kind: Boolean')
