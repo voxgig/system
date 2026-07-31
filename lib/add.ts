@@ -451,5 +451,52 @@ export {
   addSrv,
   addMsg,
   addFields,
+  addEnv,
+  ENV_KINDS,
   fmt,
+}
+
+
+// The environment kinds @voxgig/build's EnvGen supports (kind defaults
+// to the env name; an unknown kind fails generation with this list too).
+const ENV_KINDS =
+  ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare']
+
+
+// add env [String(name)|Jsonic(spec)]
+// Declares a target environment in the model (main: env: <name>: {...}).
+// Name form: `add env aws`. Spec form: `add env
+// '{name:aws2,kind:aws,region:eu-west-1,stage:prd}'`. Appends to the
+// model file referenced as `main: env: @"..."` when present, else to the
+// root model file.
+function addEnv(start: string, arg: string): AddResult {
+  const files = resolveModelFiles(start)
+  const { name, def } = parseArg(arg, 'env')
+
+  const kind = def.kind || name
+  if (!ENV_KINDS.includes(kind)) {
+    throw new Error('unknown environment kind: ' + kind +
+      ' (known: ' + ENV_KINDS.join(', ') +
+      '; use {name:..., kind:...} for a custom-named env)')
+  }
+
+  // Idempotent: environment already in the compiled model.
+  const model = compiledModel(files)
+  if (model?.main?.env?.[name]) {
+    return { file: files.model, text: '', skipped: true }
+  }
+
+  if (null == def.active) {
+    def.active = true
+  }
+
+  // Target: the env model file when referenced, else the root model file.
+  const src = Fs.readFileSync(files.model, 'utf8')
+  const m = src.match(/main:\s*env:\s*@"([^"]+)"/)
+  const target = m ? Path.join(files.folder, m[1]) : files.model
+  const prefix = m ? '' : 'main: env: '
+
+  const text = '\n' + prefix + name + ': ' + fmt(def, 0)
+
+  return append(target, text)
 }

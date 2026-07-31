@@ -15,8 +15,11 @@ exports.diffTemplates = diffTemplates;
 //
 // Layered resolution (first hit wins):
 //   1. backend/src/gen/<name>.ts   compiled generator override (deep custom)
-//   2. backend/tm/lambda/<frag>    project fragment (text-level custom)
+//   2. backend/tm/<area>/<frag>    project fragment (text-level custom)
 //   3. @voxgig/build               package defaults
+//
+// Fragment names are area-qualified (lambda/srv.yml.frag,
+// env/aws/serverless.yml.frag); bare names default to the lambda area.
 //
 // eject copies a package fragment (or, with code=true, a template source
 // rewired to the package's public API) into the project, recording
@@ -32,9 +35,9 @@ const GENERATORS = ['srv_yml', 'srv_handler', 'res_yml'];
 exports.GENERATORS = GENERATORS;
 // Generator shorthand -> default fragment.
 const GENERATOR_FRAG = {
-    srv_yml: 'srv.yml.frag',
-    srv_handler: 'srv_handler.ts.frag',
-    res_yml: 'res.role.yml.frag',
+    srv_yml: 'lambda/srv.yml.frag',
+    srv_handler: 'lambda/srv_handler.ts.frag',
+    res_yml: 'lambda/res.role.yml.frag',
 };
 function resolveProject(start) {
     const files = (0, add_1.resolveModelFiles)(start);
@@ -52,10 +55,10 @@ function resolveProject(start) {
     const pkg = node_path_1.default.dirname(pkgjson);
     return {
         backend,
-        tm: node_path_1.default.join(backend, 'tm', 'lambda'),
+        tm: node_path_1.default.join(backend, 'tm'),
         gen: node_path_1.default.join(backend, 'src', 'gen'),
         pkg,
-        pkgtm: node_path_1.default.join(pkg, 'tm', 'lambda'),
+        pkgtm: node_path_1.default.join(pkg, 'tm'),
     };
 }
 function pkgVersion(project) {
@@ -64,13 +67,54 @@ function pkgVersion(project) {
 function sha256(content) {
     return node_crypto_1.default.createHash('sha256').update(content).digest('hex');
 }
+// Provenance lives at tm/.ejected.json; the pre-area location
+// (tm/lambda/.ejected.json) and bare fragment keys are still read, with
+// bare keys normalized to the lambda area.
 function readProvenance(project) {
-    const p = node_path_1.default.join(project.tm, '.ejected.json');
-    return node_fs_1.default.existsSync(p) ? JSON.parse(node_fs_1.default.readFileSync(p, 'utf8')) : {};
+    const out = {};
+    for (const p of [
+        node_path_1.default.join(project.tm, 'lambda', '.ejected.json'),
+        node_path_1.default.join(project.tm, '.ejected.json'),
+    ]) {
+        if (node_fs_1.default.existsSync(p)) {
+            const prov = JSON.parse(node_fs_1.default.readFileSync(p, 'utf8'));
+            for (const key of Object.keys(prov)) {
+                const norm = (key.includes('/') || key.startsWith('code:')) ?
+                    key : 'lambda/' + key;
+                out[norm] = prov[key];
+            }
+        }
+    }
+    return out;
 }
 function writeProvenance(project, prov) {
     node_fs_1.default.mkdirSync(project.tm, { recursive: true });
     node_fs_1.default.writeFileSync(node_path_1.default.join(project.tm, '.ejected.json'), JSON.stringify(prov, null, 2) + '\n');
+    const old = node_path_1.default.join(project.tm, 'lambda', '.ejected.json');
+    if (node_fs_1.default.existsSync(old)) {
+        node_fs_1.default.rmSync(old);
+    }
+}
+// All package fragments, as area-qualified relative names.
+function pkgFragments(project) {
+    const out = [];
+    const walk = (rel) => {
+        const dir = node_path_1.default.join(project.pkgtm, rel);
+        if (!node_fs_1.default.existsSync(dir)) {
+            return;
+        }
+        for (const e of node_fs_1.default.readdirSync(dir, { withFileTypes: true })) {
+            const relpath = '' === rel ? e.name : rel + '/' + e.name;
+            if (e.isDirectory()) {
+                walk(relpath);
+            }
+            else if (e.name.endsWith('.frag')) {
+                out.push(relpath);
+            }
+        }
+    };
+    walk('');
+    return out.sort();
 }
 // List each template with the layer that currently provides it.
 function listTemplates(start) {
@@ -85,14 +129,12 @@ function listTemplates(start) {
                 'project (src/gen/' + gen + '.ts)' : 'package',
         });
     }
-    const frags = node_fs_1.default.readdirSync(project.pkgtm)
-        .filter((f) => f.endsWith('.frag')).sort();
-    for (const frag of frags) {
+    for (const frag of pkgFragments(project)) {
         rows.push({
             name: frag,
             kind: 'fragment',
             layer: node_fs_1.default.existsSync(node_path_1.default.join(project.tm, frag)) ?
-                'project (tm/lambda/' + frag + ')' : 'package',
+                'project (tm/' + frag + ')' : 'package',
         });
     }
     return rows;
@@ -100,20 +142,21 @@ function listTemplates(start) {
 // Eject a fragment (text template) into backend/tm/lambda/.
 function ejectFragment(start, name) {
     const project = resolveProject(start);
-    const frag = GENERATOR_FRAG[name] || name;
+    let frag = GENERATOR_FRAG[name] || name;
+    if (!frag.includes('/')) {
+        frag = 'lambda/' + frag;
+    }
     const srcpath = node_path_1.default.join(project.pkgtm, frag);
     if (!node_fs_1.default.existsSync(srcpath)) {
-        const avail = node_fs_1.default.readdirSync(project.pkgtm)
-            .filter((f) => f.endsWith('.frag')).sort();
         throw new Error('unknown fragment: ' + frag +
-            ' (available: ' + avail.join(', ') + ')');
+            ' (available: ' + pkgFragments(project).join(', ') + ')');
     }
     const dest = node_path_1.default.join(project.tm, frag);
     if (node_fs_1.default.existsSync(dest)) {
         throw new Error('already ejected: ' + node_path_1.default.relative(start, dest));
     }
     const content = node_fs_1.default.readFileSync(srcpath, 'utf8');
-    node_fs_1.default.mkdirSync(project.tm, { recursive: true });
+    node_fs_1.default.mkdirSync(node_path_1.default.dirname(dest), { recursive: true });
     node_fs_1.default.writeFileSync(dest, content);
     const prov = readProvenance(project);
     prov[frag] = {

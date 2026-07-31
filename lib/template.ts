@@ -5,8 +5,11 @@
 //
 // Layered resolution (first hit wins):
 //   1. backend/src/gen/<name>.ts   compiled generator override (deep custom)
-//   2. backend/tm/lambda/<frag>    project fragment (text-level custom)
+//   2. backend/tm/<area>/<frag>    project fragment (text-level custom)
 //   3. @voxgig/build               package defaults
+//
+// Fragment names are area-qualified (lambda/srv.yml.frag,
+// env/aws/serverless.yml.frag); bare names default to the lambda area.
 //
 // eject copies a package fragment (or, with code=true, a template source
 // rewired to the package's public API) into the project, recording
@@ -26,18 +29,18 @@ const GENERATORS = ['srv_yml', 'srv_handler', 'res_yml']
 
 // Generator shorthand -> default fragment.
 const GENERATOR_FRAG: Record<string, string> = {
-  srv_yml: 'srv.yml.frag',
-  srv_handler: 'srv_handler.ts.frag',
-  res_yml: 'res.role.yml.frag',
+  srv_yml: 'lambda/srv.yml.frag',
+  srv_handler: 'lambda/srv_handler.ts.frag',
+  res_yml: 'lambda/res.role.yml.frag',
 }
 
 
 export type Project = {
   backend: string     // the project backend folder (holds model/, tm/, src/)
-  tm: string          // backend/tm/lambda
+  tm: string          // backend/tm (project fragment root)
   gen: string         // backend/src/gen
   pkg: string         // resolved @voxgig/build package folder
-  pkgtm: string       // package tm/lambda
+  pkgtm: string       // package tm root
 }
 
 
@@ -59,10 +62,10 @@ function resolveProject(start: string): Project {
 
   return {
     backend,
-    tm: Path.join(backend, 'tm', 'lambda'),
+    tm: Path.join(backend, 'tm'),
     gen: Path.join(backend, 'src', 'gen'),
     pkg,
-    pkgtm: Path.join(pkg, 'tm', 'lambda'),
+    pkgtm: Path.join(pkg, 'tm'),
   }
 }
 
@@ -81,15 +84,58 @@ type Provenance = Record<string, {
   package: string, version: string, sha256: string
 }>
 
+// Provenance lives at tm/.ejected.json; the pre-area location
+// (tm/lambda/.ejected.json) and bare fragment keys are still read, with
+// bare keys normalized to the lambda area.
 function readProvenance(project: Project): Provenance {
-  const p = Path.join(project.tm, '.ejected.json')
-  return Fs.existsSync(p) ? JSON.parse(Fs.readFileSync(p, 'utf8')) : {}
+  const out: Provenance = {}
+  for (const p of [
+    Path.join(project.tm, 'lambda', '.ejected.json'),
+    Path.join(project.tm, '.ejected.json'),
+  ]) {
+    if (Fs.existsSync(p)) {
+      const prov = JSON.parse(Fs.readFileSync(p, 'utf8'))
+      for (const key of Object.keys(prov)) {
+        const norm = (key.includes('/') || key.startsWith('code:')) ?
+          key : 'lambda/' + key
+        out[norm] = prov[key]
+      }
+    }
+  }
+  return out
 }
 
 function writeProvenance(project: Project, prov: Provenance) {
   Fs.mkdirSync(project.tm, { recursive: true })
   Fs.writeFileSync(Path.join(project.tm, '.ejected.json'),
     JSON.stringify(prov, null, 2) + '\n')
+  const old = Path.join(project.tm, 'lambda', '.ejected.json')
+  if (Fs.existsSync(old)) {
+    Fs.rmSync(old)
+  }
+}
+
+
+// All package fragments, as area-qualified relative names.
+function pkgFragments(project: Project): string[] {
+  const out: string[] = []
+  const walk = (rel: string) => {
+    const dir = Path.join(project.pkgtm, rel)
+    if (!Fs.existsSync(dir)) {
+      return
+    }
+    for (const e of Fs.readdirSync(dir, { withFileTypes: true })) {
+      const relpath = '' === rel ? e.name : rel + '/' + e.name
+      if (e.isDirectory()) {
+        walk(relpath)
+      }
+      else if (e.name.endsWith('.frag')) {
+        out.push(relpath)
+      }
+    }
+  }
+  walk('')
+  return out.sort()
 }
 
 
@@ -115,14 +161,12 @@ function listTemplates(start: string): TemplateRow[] {
     })
   }
 
-  const frags = Fs.readdirSync(project.pkgtm)
-    .filter((f) => f.endsWith('.frag')).sort()
-  for (const frag of frags) {
+  for (const frag of pkgFragments(project)) {
     rows.push({
       name: frag,
       kind: 'fragment',
       layer: Fs.existsSync(Path.join(project.tm, frag)) ?
-        'project (tm/lambda/' + frag + ')' : 'package',
+        'project (tm/' + frag + ')' : 'package',
     })
   }
 
@@ -134,13 +178,14 @@ function listTemplates(start: string): TemplateRow[] {
 function ejectFragment(start: string, name: string): string {
   const project = resolveProject(start)
 
-  const frag = GENERATOR_FRAG[name] || name
+  let frag = GENERATOR_FRAG[name] || name
+  if (!frag.includes('/')) {
+    frag = 'lambda/' + frag
+  }
   const srcpath = Path.join(project.pkgtm, frag)
   if (!Fs.existsSync(srcpath)) {
-    const avail = Fs.readdirSync(project.pkgtm)
-      .filter((f) => f.endsWith('.frag')).sort()
     throw new Error('unknown fragment: ' + frag +
-      ' (available: ' + avail.join(', ') + ')')
+      ' (available: ' + pkgFragments(project).join(', ') + ')')
   }
 
   const dest = Path.join(project.tm, frag)
@@ -149,7 +194,7 @@ function ejectFragment(start: string, name: string): string {
   }
 
   const content = Fs.readFileSync(srcpath, 'utf8')
-  Fs.mkdirSync(project.tm, { recursive: true })
+  Fs.mkdirSync(Path.dirname(dest), { recursive: true })
   Fs.writeFileSync(dest, content)
 
   const prov = readProvenance(project)

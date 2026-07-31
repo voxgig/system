@@ -16,7 +16,7 @@
 // are found via model/model.jsonic and appended to. Run the project's
 // model build (npm run model-build) afterwards to compile.
 
-import { addEntity, addSrv, addMsg, addFields } from './lib/add'
+import { addEntity, addSrv, addMsg, addFields, addEnv } from './lib/add'
 import {
   listTemplates, ejectFragment, ejectCode, diffTemplates,
 } from './lib/template'
@@ -29,6 +29,7 @@ const USAGE = `Usage: voxgig-system <command> [args...]
   add msg    [name|spec]           add a message (path: thing.save.item)
   add field  <entity> [field...]   add field(s) to an entity
   add fields <entity> [field...]   alias of add field
+  add env    [name|spec]           declare a target environment
 
   template list                    templates + the layer providing each
   template eject <name>            copy a fragment into backend/tm/lambda/
@@ -40,6 +41,7 @@ spec:  jsonic definition with config options, e.g.
        add entity '{name:thing,field:{title:{kind:String}}}'
        add srv    '{name:thing,user:{required:false}}'
        add msg    '{name:thing.save.item,params:{title:String}}'
+       add env    aws   |   add env '{name:aws,region:eu-west-1,stage:prd}'
        add field  thing title 'done:Boolean' 'note:{kind:String,valid:Skip}'
 
 Generation templates resolve in layers (first hit wins): project
@@ -138,6 +140,11 @@ async function main() {
     else if ('msg' === element) {
       requireArgs(args, 1, 'add msg')
       const res = addMsg(start, args[0])
+      report([res])
+    }
+    else if ('env' === element) {
+      requireArgs(args, 1, 'add env')
+      const res = addEnv(start, args[0])
       report([res])
     }
     else if ('field' === element || 'fields' === element) {

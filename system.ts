@@ -13,7 +13,7 @@ import { Utility } from './lib/utility'
 
 import { MakeSrv } from './srv/make'
 
-import { addEntity, addSrv, addMsg, addFields, resolveModelFiles } from './lib/add'
+import { addEntity, addSrv, addMsg, addFields, addEnv, resolveModelFiles } from './lib/add'
 import { listTemplates, ejectFragment, ejectCode, diffTemplates } from './lib/template'
 
 
@@ -222,6 +222,7 @@ const Add = {
   srv: addSrv,
   msg: addMsg,
   fields: addFields,
+  env: addEnv,
   resolveModelFiles,
 }
 

@@ -153,6 +153,7 @@ const Add = {
     srv: add_1.addSrv,
     msg: add_1.addMsg,
     fields: add_1.addFields,
+    env: add_1.addEnv,
     resolveModelFiles: add_1.resolveModelFiles,
 };
 exports.Add = Add;

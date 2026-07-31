@@ -17,4 +17,6 @@ declare function addEntity(start: string, arg: string): AddResult;
 declare function addSrv(start: string, arg: string): AddResult;
 declare function addMsg(start: string, arg: string): AddResult;
 declare function addFields(start: string, entref: string, fieldargs: string[]): AddResult[];
-export { resolveModelFolder, resolveModelFiles, addEntity, addSrv, addMsg, addFields, fmt, };
+export { resolveModelFolder, resolveModelFiles, addEntity, addSrv, addMsg, addFields, addEnv, ENV_KINDS, fmt, };
+declare const ENV_KINDS: string[];
+declare function addEnv(start: string, arg: string): AddResult;

@@ -4,7 +4,7 @@ import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
-import { addEntity, addSrv, addMsg, addFields, resolveModelFiles }
+import { addEntity, addSrv, addMsg, addFields, addEnv, resolveModelFiles }
   from '../lib/add'
 
 import { gubuify } from '../system'
@@ -221,6 +221,48 @@ describe('add-idempotency', () => {
   test('no-compiled-model-appends', () => {
     const root = makeProject() // no model.json
     expect(addEntity(root, 'thing').skipped).toBeUndefined()
+  })
+
+})
+
+
+describe('add-env', () => {
+
+  test('name-and-spec-forms', () => {
+    const root = makeProject()
+
+    const r1 = addEnv(root, 'aws')
+    expect(r1.file.endsWith('model.aontu')).toEqual(true)
+    expect(r1.text).toContain('main: env: aws: {')
+    expect(r1.text).toContain('active: true')
+
+    const r2 = addEnv(root, '{name:aws2,kind:aws,region:eu-west-1,stage:prd}')
+    expect(r2.text).toContain('main: env: aws2: {')
+    expect(r2.text).toContain("region: 'eu-west-1'")
+
+    expect(() => addEnv(root, 'mainframe')).toThrow(/unknown environment kind/)
+  })
+
+
+  test('env-file-ref-and-idempotency', () => {
+    const root = makeProject()
+    const model = Path.join(root, 'backend', 'model')
+
+    // reference an env model file
+    Fs.appendFileSync(Path.join(model, 'model.aontu'),
+      '\nmain: env: @"env.aontu"\n')
+    Fs.writeFileSync(Path.join(model, 'env.aontu'), '\nlocal: { active: true }\n')
+
+    const r = addEnv(root, 'docker')
+    expect(r.file.endsWith('env.aontu')).toEqual(true)
+    expect(r.text).toContain('docker: {')
+    expect(r.text).not.toContain('main: env:')
+
+    // idempotent via compiled model
+    Fs.writeFileSync(Path.join(model, 'model.json'), JSON.stringify({
+      main: { env: { docker: { active: true } } },
+    }))
+    expect(addEnv(root, 'docker').skipped).toEqual(true)
   })
 
 })

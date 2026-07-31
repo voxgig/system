@@ -46,7 +46,7 @@ describe('template', () => {
     expect(srvgen.kind).toEqual('generator')
     expect(srvgen.layer).toEqual('package')
 
-    const frag = rows.find((r) => 'srv.yml.frag' === r.name)!
+    const frag = rows.find((r) => 'lambda/srv.yml.frag' === r.name)!
     expect(frag.layer).toEqual('package')
   })
 
@@ -60,13 +60,13 @@ describe('template', () => {
     expect(Fs.readFileSync(dest, 'utf8')).toContain('$$name$$:')
 
     // provenance recorded
-    const prov = JSON.parse(Fs.readFileSync(
-      Path.join(Path.dirname(dest), '.ejected.json'), 'utf8'))
-    expect(prov['srv.yml.frag'].version).toEqual('4.1.0')
+    const prov = JSON.parse(Fs.readFileSync(Path.join(
+      Path.dirname(Path.dirname(dest)), '.ejected.json'), 'utf8'))
+    expect(prov['lambda/srv.yml.frag'].version).toEqual('4.1.0')
 
     // layer now shows project
     const rows = listTemplates(root)
-    expect(rows.find((r) => 'srv.yml.frag' === r.name)!.layer)
+    expect(rows.find((r) => 'lambda/srv.yml.frag' === r.name)!.layer)
       .toContain('project')
 
     // double eject refuses
