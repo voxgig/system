@@ -178,3 +178,49 @@ describe('gubuify-open', () => {
   })
 
 })
+
+
+describe('add-idempotency', () => {
+
+  // With a compiled model.json present, re-adding an existing element is
+  // a no-op (skipped) - the check is semantic, so source formatting does
+  // not matter.
+  test('skip-existing-elements', () => {
+    const root = makeProject()
+    const model = Path.join(root, 'backend', 'model')
+
+    Fs.writeFileSync(Path.join(model, 'model.json'), JSON.stringify({
+      main: {
+        ent: { app: { thing: { field: { title: { kind: 'String' } } } } },
+        srv: { thing: {} },
+        msg: { aim: { thing: { save: { item: {} } } } },
+      },
+    }))
+
+    const entlen = Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length
+
+    expect(addEntity(root, 'thing').skipped).toEqual(true)
+    expect(addSrv(root, 'thing').skipped).toEqual(true)
+    expect(addMsg(root, 'thing.save.item').skipped).toEqual(true)
+    expect(addMsg(root, 'aim:thing:save:item').skipped).toEqual(true)
+
+    const fields = addFields(root, 'thing', ['title', 'done:Boolean'])
+    expect(fields[0].skipped).toEqual(true)      // title exists
+    expect(fields[1].skipped).toBeUndefined()    // done is new
+
+    // nothing appended for the skips
+    expect(Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length)
+      .toBeGreaterThan(entlen) // only the new 'done' field grew the file
+
+    // new elements still append
+    expect(addEntity(root, 'other').skipped).toBeUndefined()
+    expect(addMsg(root, 'thing.load.item').skipped).toBeUndefined()
+  })
+
+
+  test('no-compiled-model-appends', () => {
+    const root = makeProject() // no model.json
+    expect(addEntity(root, 'thing').skipped).toBeUndefined()
+  })
+
+})

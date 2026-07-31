@@ -147,6 +147,21 @@ function parseArg(arg, kind) {
     throw new Error('invalid ' + kind + ' argument: ' + arg +
         ' - provide a name, {name:...,...spec}, or {thename:{...spec}}');
 }
+// The last compiled model (model.json next to the model source), used to
+// make the add operations idempotent: an element that already exists in
+// the compiled model is skipped rather than appended again. Formatting
+// of the sources is irrelevant since the check is semantic. Returns null
+// when the model has not been compiled yet (adds then simply append -
+// aontu unification of an identical element converges anyway).
+function compiledModel(files) {
+    const p = node_path_1.default.join(files.folder, 'model.json');
+    try {
+        return JSON.parse(node_fs_1.default.readFileSync(p, 'utf8'));
+    }
+    catch (e) {
+        return null;
+    }
+}
 // Default zone for entities: the single non-sys zone shape spread already
 // in the entity file (`<zone>: &: ...`), else 'app'.
 function defaultZone(entFile) {
@@ -160,6 +175,7 @@ function defaultZone(entFile) {
 // add entity [String(name)|Jsonic(spec)]
 // Names may be zone-qualified: app/thing. Spec: { name, zone?, ...def }.
 function addEntity(start, arg) {
+    var _a, _b, _c;
     const files = resolveModelFiles(start);
     const { name: rawname, def } = parseArg(arg, 'entity');
     let zone = def.zone;
@@ -171,6 +187,11 @@ function addEntity(start, arg) {
         name = parts[1];
     }
     zone = zone || defaultZone(files.ent);
+    // Idempotent: entity already in the compiled model.
+    const model = compiledModel(files);
+    if ((_c = (_b = (_a = model === null || model === void 0 ? void 0 : model.main) === null || _a === void 0 ? void 0 : _a.ent) === null || _b === void 0 ? void 0 : _b[zone]) === null || _c === void 0 ? void 0 : _c[name]) {
+        return { file: files.ent, text: '', skipped: true };
+    }
     if (null == def.field) {
         def.field = {};
     }
@@ -188,8 +209,14 @@ function addEntity(start, arg) {
 // The plain-name form wires the service to its aim messages and a private
 // web area (matching the standard project scaffold).
 function addSrv(start, arg) {
+    var _a, _b;
     const files = resolveModelFiles(start);
     const { name, def } = parseArg(arg, 'srv');
+    // Idempotent: service already in the compiled model.
+    const model = compiledModel(files);
+    if ((_b = (_a = model === null || model === void 0 ? void 0 : model.main) === null || _a === void 0 ? void 0 : _a.srv) === null || _b === void 0 ? void 0 : _b[name]) {
+        return { file: files.srv, text: '', skipped: true };
+    }
     if (null == def.in) {
         def.in = {
             aim: { [name]: {} },
@@ -212,6 +239,7 @@ function addSrv(start, arg) {
 // 'aim' is prepended if missing. Spec: { name: 'thing.save.item', ...meta }
 // where meta (params, transport, file, ...) lands under the '$' key.
 function addMsg(start, arg) {
+    var _a;
     const files = resolveModelFiles(start);
     // A pure message path (thing.save.item, aim:thing:save:item) is taken
     // as-is - jsonic would otherwise parse the colon form as a nested map.
@@ -244,6 +272,17 @@ function addMsg(start, arg) {
     if (path.length < 2) {
         throw new Error('invalid msg path: ' + path.join('.'));
     }
+    // Idempotent: message path already in the compiled model.
+    const model = compiledModel(files);
+    if (null != model) {
+        let node = (_a = model.main) === null || _a === void 0 ? void 0 : _a.msg;
+        for (const p of path) {
+            node = node === null || node === void 0 ? void 0 : node[p];
+        }
+        if (null != node) {
+            return { file: files.msg, text: '', skipped: true };
+        }
+    }
     const prefix = path.join(': ');
     const text = 0 === Object.keys(meta).length ?
         '\n' + prefix + ': {}' :
@@ -255,6 +294,7 @@ function addMsg(start, arg) {
 //            | {name:title,kind:String}
 // A label is derived from the name when not given.
 function addFields(start, entref, fieldargs) {
+    var _a, _b, _c, _d, _e;
     const files = resolveModelFiles(start);
     let zone;
     let name;
@@ -268,6 +308,7 @@ function addFields(start, entref, fieldargs) {
     if (0 === fieldargs.length) {
         throw new Error('no fields given');
     }
+    const model = compiledModel(files);
     const out = [];
     for (const arg of fieldargs) {
         let parsed;
@@ -302,6 +343,11 @@ function addFields(start, entref, fieldargs) {
         }
         else {
             throw new Error('invalid field argument: ' + arg);
+        }
+        // Idempotent: field already on the entity in the compiled model.
+        if ((_e = (_d = (_c = (_b = (_a = model === null || model === void 0 ? void 0 : model.main) === null || _a === void 0 ? void 0 : _a.ent) === null || _b === void 0 ? void 0 : _b[zone]) === null || _c === void 0 ? void 0 : _c[name]) === null || _d === void 0 ? void 0 : _d.field) === null || _e === void 0 ? void 0 : _e[fname]) {
+            out.push({ file: files.ent, text: '', skipped: true });
+            continue;
         }
         if (null == def.kind) {
             def.kind = 'String';

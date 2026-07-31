@@ -166,10 +166,15 @@ function requireArgs(args: string[], n: number, what: string) {
   }
 }
 
-function report(results: { file: string, text: string }[]) {
+function report(results: { file: string, text: string, skipped?: boolean }[]) {
   for (const res of results) {
-    console.log('appended to ' + res.file + ':')
-    console.log(res.text)
+    if (res.skipped) {
+      console.log('already present (no change): ' + res.file)
+    }
+    else {
+      console.log('appended to ' + res.file + ':')
+      console.log(res.text)
+    }
   }
 }
 

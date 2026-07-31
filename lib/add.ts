@@ -29,7 +29,8 @@ export type ModelFiles = {
 
 export type AddResult = {
   file: string         // file appended to
-  text: string         // the appended block
+  text: string         // the appended block ('' when skipped)
+  skipped?: boolean    // true when the element already exists (no change)
 }
 
 
@@ -179,6 +180,23 @@ function parseArg(arg: string, kind: string): { name: string, def: any } {
 }
 
 
+// The last compiled model (model.json next to the model source), used to
+// make the add operations idempotent: an element that already exists in
+// the compiled model is skipped rather than appended again. Formatting
+// of the sources is irrelevant since the check is semantic. Returns null
+// when the model has not been compiled yet (adds then simply append -
+// aontu unification of an identical element converges anyway).
+function compiledModel(files: ModelFiles): any {
+  const p = Path.join(files.folder, 'model.json')
+  try {
+    return JSON.parse(Fs.readFileSync(p, 'utf8'))
+  }
+  catch (e: any) {
+    return null
+  }
+}
+
+
 // Default zone for entities: the single non-sys zone shape spread already
 // in the entity file (`<zone>: &: ...`), else 'app'.
 function defaultZone(entFile: string): string {
@@ -207,6 +225,12 @@ function addEntity(start: string, arg: string): AddResult {
   }
   zone = zone || defaultZone(files.ent)
 
+  // Idempotent: entity already in the compiled model.
+  const model = compiledModel(files)
+  if (model?.main?.ent?.[zone]?.[name]) {
+    return { file: files.ent, text: '', skipped: true }
+  }
+
   if (null == def.field) {
     def.field = {}
   }
@@ -231,6 +255,12 @@ function addEntity(start: string, arg: string): AddResult {
 function addSrv(start: string, arg: string): AddResult {
   const files = resolveModelFiles(start)
   const { name, def } = parseArg(arg, 'srv')
+
+  // Idempotent: service already in the compiled model.
+  const model = compiledModel(files)
+  if (model?.main?.srv?.[name]) {
+    return { file: files.srv, text: '', skipped: true }
+  }
 
   if (null == def.in) {
     def.in = {
@@ -296,6 +326,18 @@ function addMsg(start: string, arg: string): AddResult {
     throw new Error('invalid msg path: ' + path.join('.'))
   }
 
+  // Idempotent: message path already in the compiled model.
+  const model = compiledModel(files)
+  if (null != model) {
+    let node: any = model.main?.msg
+    for (const p of path) {
+      node = node?.[p]
+    }
+    if (null != node) {
+      return { file: files.msg, text: '', skipped: true }
+    }
+  }
+
   const prefix = path.join(': ')
   const text = 0 === Object.keys(meta).length ?
     '\n' + prefix + ': {}' :
@@ -326,6 +368,8 @@ function addFields(start: string, entref: string, fieldargs: string[])
   if (0 === fieldargs.length) {
     throw new Error('no fields given')
   }
+
+  const model = compiledModel(files)
 
   const out: AddResult[] = []
 
@@ -364,6 +408,12 @@ function addFields(start: string, entref: string, fieldargs: string[])
     }
     else {
       throw new Error('invalid field argument: ' + arg)
+    }
+
+    // Idempotent: field already on the entity in the compiled model.
+    if (model?.main?.ent?.[zone]?.[name]?.field?.[fname]) {
+      out.push({ file: files.ent, text: '', skipped: true })
+      continue
     }
 
     if (null == def.kind) {

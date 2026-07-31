@@ -8,6 +8,7 @@ export type ModelFiles = {
 export type AddResult = {
     file: string;
     text: string;
+    skipped?: boolean;
 };
 declare function resolveModelFolder(start: string): string;
 declare function resolveModelFiles(start: string): ModelFiles;

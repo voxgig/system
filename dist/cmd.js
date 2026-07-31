@@ -152,8 +152,13 @@ function requireArgs(args, n, what) {
 }
 function report(results) {
     for (const res of results) {
-        console.log('appended to ' + res.file + ':');
-        console.log(res.text);
+        if (res.skipped) {
+            console.log('already present (no change): ' + res.file);
+        }
+        else {
+            console.log('appended to ' + res.file + ':');
+            console.log(res.text);
+        }
     }
 }
 if (require.main === module) {
