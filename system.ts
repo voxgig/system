@@ -14,6 +14,7 @@ import { Utility } from './lib/utility'
 import { MakeSrv } from './srv/make'
 
 import { addEntity, addSrv, addMsg, addFields, resolveModelFiles } from './lib/add'
+import { listTemplates, ejectFragment, ejectCode, diffTemplates } from './lib/template'
 
 
 
@@ -224,8 +225,16 @@ const Add = {
   resolveModelFiles,
 }
 
+const Template = {
+  list: listTemplates,
+  eject: ejectFragment,
+  ejectCode,
+  diff: diffTemplates,
+}
+
 export {
   Add,
+  Template,
   gubuify,
   System,
   MakeSrv,

@@ -56,3 +56,26 @@ Add.fields(folder, 'thing', ['title', 'done:Boolean'])
 ## License
 
 MIT. Copyright (c) Voxgig Ltd.
+
+## Custom generation templates
+
+Generation templates resolve in layers — first hit wins:
+
+1. `backend/src/gen/<name>.ts` — compiled generator override (deep custom)
+2. `backend/tm/lambda/<frag>` — project fragment (text-level custom)
+3. `@voxgig/build` defaults
+
+```bash
+voxgig-system template list            # each template + its providing layer
+voxgig-system template eject srv.yml.frag      # copy fragment -> tm/lambda/
+voxgig-system template eject srv_yml --code    # copy generator -> src/gen/
+voxgig-system template diff            # ejected copies vs installed package
+```
+
+Fragments are jostraca-style text templates with `$$slot$$` placeholders —
+edit and re-run `npm run model-build`, no compile step. Ejecting records
+provenance (`tm/lambda/.ejected.json`) so `template diff` can flag
+upstream template changes after a `@voxgig/build` upgrade. `--code`
+copies the template source rewired to `@voxgig/build`'s public API; the
+project then owns that generator (`npm run build && npm run model-build`
+after edits).

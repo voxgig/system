@@ -2,6 +2,7 @@ import type { Msg } from './lib/types';
 import { Utility } from './lib/utility';
 import { MakeSrv } from './srv/make';
 import { addEntity, addSrv, addMsg, addFields, resolveModelFiles } from './lib/add';
+import { listTemplates, ejectFragment, ejectCode, diffTemplates } from './lib/template';
 declare function messages(seneca: any, options: any, reload: any): void;
 declare function gubuify(params: any, Gubu: any): any;
 declare function prepare(seneca: any, require: any): void;
@@ -26,4 +27,10 @@ declare const Add: {
     fields: typeof addFields;
     resolveModelFiles: typeof resolveModelFiles;
 };
-export { Add, gubuify, System, MakeSrv, Utility, Local, Live, };
+declare const Template: {
+    list: typeof listTemplates;
+    eject: typeof ejectFragment;
+    ejectCode: typeof ejectCode;
+    diff: typeof diffTemplates;
+};
+export { Add, Template, gubuify, System, MakeSrv, Utility, Local, Live, };
