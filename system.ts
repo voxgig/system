@@ -13,6 +13,8 @@ import { Utility } from './lib/utility'
 
 import { MakeSrv } from './srv/make'
 
+import { addEntity, addSrv, addMsg, addFields, resolveModelFiles } from './lib/add'
+
 
 
 const { srvmsgs, deep } = Utility
@@ -45,12 +47,32 @@ function gubuify(params: any, Gubu: any) {
   if (null == params) {
     return params
   }
+  return Gubu(gubuify_spec(params, Gubu))
+}
+
+
+// Convert model param values into a gubu spec. The '$$': 'Open' marker
+// (same convention as entity valid) makes an object open: additional
+// properties are allowed. Without it gubu objects are closed, which made
+// open message params inexpressible in the model. Nested specs stay raw
+// (builder results, not Gubu instances) so attributes like openness
+// compose into the parent shape.
+function gubuify_spec(params: any, Gubu: any): any {
+  if (null == params) {
+    return params
+  }
+
+  let open = false
+  if ('Open' === params['$$']) {
+    open = true
+    delete params['$$']
+  }
 
   for (let pn in params) {
     let m = null
     let pv = params[pn]
     if ('object' === typeof pv) {
-      params[pn] = gubuify(pv, Gubu)
+      params[pn] = gubuify_spec(pv, Gubu)
     }
     else if (
       'string' === typeof pv &&
@@ -63,11 +85,8 @@ function gubuify(params: any, Gubu: any) {
       params[png] = pv
       delete params[pn]
     }
-    else {
-      params[pn] = Gubu(pv)
-    }
   }
-  return Gubu(params)
+  return open ? Gubu.Open(params) : params
 }
 
 
@@ -197,7 +216,16 @@ export type {
   Msg
 }
 
+const Add = {
+  entity: addEntity,
+  srv: addSrv,
+  msg: addMsg,
+  fields: addFields,
+  resolveModelFiles,
+}
+
 export {
+  Add,
   gubuify,
   System,
   MakeSrv,

@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Utility = exports.MakeSrv = exports.System = void 0;
+exports.Utility = exports.MakeSrv = exports.System = exports.Add = void 0;
 exports.gubuify = gubuify;
 exports.Local = Local;
 exports.Live = Live;
@@ -14,6 +14,7 @@ const utility_1 = require("./lib/utility");
 Object.defineProperty(exports, "Utility", { enumerable: true, get: function () { return utility_1.Utility; } });
 const make_1 = require("./srv/make");
 Object.defineProperty(exports, "MakeSrv", { enumerable: true, get: function () { return make_1.MakeSrv; } });
+const add_1 = require("./lib/add");
 const { srvmsgs, deep } = utility_1.Utility;
 function messages(seneca, options, reload) {
     let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '');
@@ -35,11 +36,28 @@ function gubuify(params, Gubu) {
     if (null == params) {
         return params;
     }
+    return Gubu(gubuify_spec(params, Gubu));
+}
+// Convert model param values into a gubu spec. The '$$': 'Open' marker
+// (same convention as entity valid) makes an object open: additional
+// properties are allowed. Without it gubu objects are closed, which made
+// open message params inexpressible in the model. Nested specs stay raw
+// (builder results, not Gubu instances) so attributes like openness
+// compose into the parent shape.
+function gubuify_spec(params, Gubu) {
+    if (null == params) {
+        return params;
+    }
+    let open = false;
+    if ('Open' === params['$$']) {
+        open = true;
+        delete params['$$'];
+    }
     for (let pn in params) {
         let m = null;
         let pv = params[pn];
         if ('object' === typeof pv) {
-            params[pn] = gubuify(pv, Gubu);
+            params[pn] = gubuify_spec(pv, Gubu);
         }
         else if ('string' === typeof pv &&
             -1 === pn.indexOf(':') && ('function' === typeof Gubu[(m = ((pv.match(/\s*([A-Z]\w+)([(.\s]|$)/) || []))[1])] ||
@@ -48,11 +66,8 @@ function gubuify(params, Gubu) {
             params[png] = pv;
             delete params[pn];
         }
-        else {
-            params[pn] = Gubu(pv);
-        }
     }
-    return Gubu(params);
+    return open ? Gubu.Open(params) : params;
 }
 function actpath(msg) {
     if (msg.meta.file) {
@@ -132,4 +147,12 @@ const System = {
     prepare,
 };
 exports.System = System;
+const Add = {
+    entity: add_1.addEntity,
+    srv: add_1.addSrv,
+    msg: add_1.addMsg,
+    fields: add_1.addFields,
+    resolveModelFiles: add_1.resolveModelFiles,
+};
+exports.Add = Add;
 //# sourceMappingURL=system.js.map
