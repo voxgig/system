@@ -383,8 +383,84 @@ exports.ENV_KINDS = ENV_KINDS;
 // '{name:aws2,kind:aws,region:eu-west-1,stage:prd}'`. Appends to the
 // model file referenced as `main: env: @"..."` when present, else to the
 // root model file.
+// Service declarations the web env needs so MakeSrv wires the generated
+// auth + generic-entity service files. Appended to srv.aontu / msg.aontu by
+// `add env web` (idempotent: only when the auth service is not yet declared).
+const WEB_SRV_DECL = `
+# Auth service (signin/signout/session + settings/security).
+auth: {
+  user: {
+    required: false
+  }
+  in: {
+    aim: {
+      auth: {}
+      req: {
+        on: {
+          auth: {
+            '$': {
+              allow: true
+            }
+          }
+        }
+      }
+    }
+  }
+  api: {
+    web: {
+      path: {
+        area: 'private/'
+        suffix: ''
+      }
+    }
+  }
+  env: {
+    lambda: {
+      active: true
+    }
+  }
+}
+
+
+# Generic entity service: one CRUD implementation parameterised by the entity
+# canon carried in the message (aim:ent,cmd:<verb> with ent:'zone/name').
+# Access is scoped by project membership (see src/srv/ent/access.ts).
+ent: {
+  in: {
+    aim: ent: {}
+    aim: req: on: ent: '$': allow: true
+  }
+  user: required: true
+  api: web: path: { area: 'private/', suffix: '' }
+  env: lambda: active: true
+}`;
+const WEB_MSG_DECL = `
+# Auth messages + gateway (web) wrappers.
+aim: auth: get: info: {}
+aim: auth: signin: user: {}
+aim: auth: signout: user: {}
+aim: auth: load: auth: {}
+aim: auth: change: pass: {}
+aim: auth: update: user: {}
+aim: auth: remind: pass: {}
+
+# Generic entity CRUD (parameterised by ent:'zone/name' in the message).
+aim: ent: {
+  get: info: {}
+  cmd: list: {}
+  cmd: load: {}
+  cmd: save: {}
+  cmd: remove: {}
+}
+
+aim: req: on: auth: signin: user: '$': { file: './web_signin_user' }
+aim: req: on: auth: signout: user: '$': { file: './web_signout_user' }
+aim: req: on: auth: load: auth: '$': { file: './web_load_auth' }
+aim: req: on: auth: change: pass: '$': { file: './web_change_pass' }
+aim: req: on: auth: update: user: '$': { file: './web_update_user' }
+aim: req: on: auth: remind: pass: '$': { file: './web_remind_pass' }`;
 function addEnv(start, arg) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const files = resolveModelFiles(start);
     const { name, def } = parseArg(arg, 'env');
     const kind = def.kind || name;
@@ -400,6 +476,13 @@ function addEnv(start, arg) {
     }
     if (null == def.active) {
         def.active = true;
+    }
+    // The web env needs the auth + generic entity services declared in the
+    // model so MakeSrv wires the generated service files (idempotent: only when
+    // the auth service is not already declared).
+    if ('web' === kind && null == ((_d = (_c = model === null || model === void 0 ? void 0 : model.main) === null || _c === void 0 ? void 0 : _c.srv) === null || _d === void 0 ? void 0 : _d.auth)) {
+        append(files.srv, WEB_SRV_DECL);
+        append(files.msg, WEB_MSG_DECL);
     }
     // Target: the env model file when referenced, else the root model file.
     const src = node_fs_1.default.readFileSync(files.model, 'utf8');
