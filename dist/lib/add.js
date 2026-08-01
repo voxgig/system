@@ -375,7 +375,7 @@ function addFields(start, entref, fieldargs) {
 }
 // The environment kinds @voxgig/build's EnvGen supports (kind defaults
 // to the env name; an unknown kind fails generation with this list too).
-const ENV_KINDS = ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare'];
+const ENV_KINDS = ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare', 'web'];
 exports.ENV_KINDS = ENV_KINDS;
 // add env [String(name)|Jsonic(spec)]
 // Declares a target environment in the model (main: env: <name>: {...}).

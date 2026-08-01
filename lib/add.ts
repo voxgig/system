@@ -460,7 +460,7 @@ export {
 // The environment kinds @voxgig/build's EnvGen supports (kind defaults
 // to the env name; an unknown kind fails generation with this list too).
 const ENV_KINDS =
-  ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare']
+  ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare', 'web']
 
 
 // add env [String(name)|Jsonic(spec)]
