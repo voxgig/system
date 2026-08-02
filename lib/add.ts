@@ -519,6 +519,20 @@ ent: {
   user: required: true
   api: web: path: { area: 'private/', suffix: '' }
   env: lambda: active: true
+}
+
+
+# REST API service (strict JSON): answers aim:api messages; the express
+# router in src/env/web/api.ts maps <prefix>/<version> REST calls onto
+# them, resolving the principal from the API access key. Entity data
+# validation comes from the model via the GENERATED shapes in
+# src/srv/api/valid_gen.ts (api_gen action).
+api: {
+  in: {
+    aim: api: {}
+  }
+  user: required: true
+  env: lambda: active: true
 }`
 
 const WEB_MSG_DECL = `
@@ -545,7 +559,39 @@ aim: req: on: auth: signout: user: '$': { file: './web_signout_user' }
 aim: req: on: auth: load: auth: '$': { file: './web_load_auth' }
 aim: req: on: auth: change: pass: '$': { file: './web_change_pass' }
 aim: req: on: auth: update: user: '$': { file: './web_update_user' }
-aim: req: on: auth: remind: pass: '$': { file: './web_remind_pass' }`
+aim: req: on: auth: remind: pass: '$': { file: './web_remind_pass' }
+
+# REST API messages (see src/env/web/api.ts for the HTTP mapping).
+aim: api: get: info: {}
+aim: api: on: ent: '$': params: { '$$': 'Open', op: String, ent: String }
+
+# API access keys (Settings & security).
+aim: auth: create: apikey: {}
+aim: auth: list: apikey: {}
+aim: auth: revoke: apikey: {}
+
+aim: req: on: auth: create: apikey: '$': { file: './web_create_apikey' }
+aim: req: on: auth: list: apikey: '$': { file: './web_list_apikey' }
+aim: req: on: auth: revoke: apikey: '$': { file: './web_revoke_apikey' }`
+
+const WEB_ENT_DECL = `
+# API access keys (REST API auth). The raw key is shown ONCE at creation;
+# only a sha-256 hash is stored. Managed via aim:auth,{create,list,revoke}:apikey
+# (Settings & security in the web app). Never exposed via the REST API or
+# the generic ent service (sys zone), and hidden from the web UI nav.
+sys: apikey: {
+  ux: { hide: true }
+  field: {
+    id:      { label: 'ID'      kind: String }
+    user_id: { label: 'User'    kind: String  ref: 'sys/user' valid: Skip }
+    name:    { label: 'Name'    kind: String  valid: 'Min(1).Max(99)' }
+    hash:    { label: 'Hash'    kind: String  valid: Skip }
+    prefix:  { label: 'Prefix'  kind: String  valid: Skip }
+    revoked: { label: 'Revoked' kind: Boolean valid: Skip }
+    t_c:     { label: 'Created' kind: Number  valid: Skip }
+  }
+  valid: '$$': 'Open'
+}`
 
 
 function addEnv(start: string, arg: string): AddResult {
@@ -575,6 +621,7 @@ function addEnv(start: string, arg: string): AddResult {
   if ('web' === kind && null == model?.main?.srv?.auth) {
     append(files.srv, WEB_SRV_DECL)
     append(files.msg, WEB_MSG_DECL)
+    append(files.ent, WEB_ENT_DECL)
   }
 
   // Target: the env model file when referenced, else the root model file.
