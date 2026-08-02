@@ -13,9 +13,15 @@ git commit -m 'ci: activate workflow'
 
 ## What runs
 
-`npm ci` → `npm run build` → `npm run test-cov`, on every push and pull
-request. The coverage gate is the one already in `npm test`: lines 95%,
-functions 95%, branches 88%. Coverage uploads as an `lcov` artifact.
+`npm install` → `npm run build` → `npm test`, on every push and pull
+request. The coverage gate lives in `npm test`: lines 95%, functions 95%,
+branches 88%. That one script both enforces the gate and emits the `lcov`
+artifact.
+
+`npm install`, not `npm ci`: this repo **gitignores** `package-lock.json`
+(`.gitignore:109`), and `npm ci` refuses to run without a committed
+lockfile (`EUSAGE`) — it would fail before reaching the build. `cache: npm`
+is omitted for the same reason: it hashes a lockfile that is not there.
 
 ## The build step is not optional
 
@@ -39,8 +45,12 @@ published; nothing needs credentials.
 
 ## Note
 
-`test-cov` was added alongside this workflow: it mirrors `test` exactly
-plus lcov output, so the thresholds stay single-sourced in
-`package.json`. Do **not** try to append reporter flags with
+The lcov reporters were folded into `test` itself rather than added as a
+separate `test-cov` script. A second script would have duplicated every
+threshold, exclusion and glob literal, so editing one and not the other
+would silently let a developer's local gate differ from CI's.
+
+Do **not** try to append the reporter flags with
 `npm test -- --test-reporter=...` — they land after the positional glob
-and node silently ignores them, yielding TAP and no lcov file.
+and node silently ignores them, yielding TAP and no lcov file. That is
+why the flags live inside the script, before the glob.

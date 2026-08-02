@@ -24,10 +24,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
 
       - name: install
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # MUST run before the tests. The suite executes compiled output from
       # dist-test/; without a build, `npm test` reports "0 tests, 100%
@@ -36,7 +35,7 @@ jobs:
         run: npm run build
 
       - name: test
-        run: npm run test-cov
+        run: npm test
 
       - name: upload coverage
         if: always()

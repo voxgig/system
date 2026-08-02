@@ -16,8 +16,7 @@
     "url": "git://github.com/voxgig/system.git"
   },
   "scripts": {
-    "test": "node --enable-source-maps --experimental-test-coverage --test-coverage-exclude='dist-test/test/**' --test-coverage-lines=95 --test-coverage-functions=95 --test-coverage-branches=88 --test \"dist-test/test/**/*.test.js\"",
-    "test-cov": "node --enable-source-maps --experimental-test-coverage --test-coverage-exclude='dist-test/test/**' --test-coverage-lines=95 --test-coverage-functions=95 --test-coverage-branches=88 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage.lcov --test \"dist-test/test/**/*.test.js\"",
+    "test": "node --enable-source-maps --experimental-test-coverage --test-coverage-exclude='dist-test/test/**' --test-coverage-lines=95 --test-coverage-functions=95 --test-coverage-branches=88 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage.lcov --test \"dist-test/test/**/*.test.js\"",
     "test-some": "node --enable-source-maps --test --test-name-pattern=\"$npm_config_pattern\" \"dist-test/test/**/*.test.js\"",
     "test-watch": "node --enable-source-maps --test --watch \"dist-test/test/**/*.test.js\"",
     "watch": "tsc -w -d",
