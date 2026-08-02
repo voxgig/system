@@ -395,7 +395,7 @@ auth: {
   in: {
     aim: {
       auth: {}
-      req: {
+      web: {
         on: {
           auth: {
             '$': {
@@ -428,7 +428,7 @@ auth: {
 ent: {
   in: {
     aim: ent: {}
-    aim: req: on: ent: '$': allow: true
+    aim: web: on: ent: '$': allow: true
   }
   user: required: true
   api: web: path: { area: 'private/', suffix: '' }
@@ -467,12 +467,25 @@ aim: ent: {
   cmd: remove: {}
 }
 
-aim: req: on: auth: signin: user: '$': { file: './web_signin_user' }
-aim: req: on: auth: signout: user: '$': { file: './web_signout_user' }
-aim: req: on: auth: load: auth: '$': { file: './web_load_auth' }
-aim: req: on: auth: change: pass: '$': { file: './web_change_pass' }
-aim: req: on: auth: update: user: '$': { file: './web_update_user' }
-aim: req: on: auth: remind: pass: '$': { file: './web_remind_pass' }
+# THE BROWSER SURFACE: aim:web is the ONLY namespace the gateway accepts
+# from a browser (see src/env/web/web.ts). Every message a browser may
+# send is declared here as a web_ PROXY forwarding to the real service
+# message, so service namespaces stay internal and the exposed surface is
+# exactly this list.
+aim: web: on: auth: signin: user: '$': { file: './web_signin_user' }
+aim: web: on: auth: signout: user: '$': { file: './web_signout_user' }
+aim: web: on: auth: load: auth: '$': { file: './web_load_auth' }
+aim: web: on: auth: change: pass: '$': { file: './web_change_pass' }
+aim: web: on: auth: update: user: '$': { file: './web_update_user' }
+aim: web: on: auth: remind: pass: '$': { file: './web_remind_pass' }
+
+# Browser proxies for the generic entity service.
+aim: web: on: ent: {
+  cmd: list: { '$': { file: './web_cmd_list' }}
+  cmd: load: { '$': { file: './web_cmd_load' }}
+  cmd: save: { '$': { file: './web_cmd_save' }}
+  cmd: remove: { '$': { file: './web_cmd_remove' }}
+}
 
 # REST API messages (see src/env/web/api.ts for the HTTP mapping).
 aim: api: get: info: {}
@@ -483,9 +496,9 @@ aim: auth: create: apikey: {}
 aim: auth: list: apikey: {}
 aim: auth: revoke: apikey: {}
 
-aim: req: on: auth: create: apikey: '$': { file: './web_create_apikey' }
-aim: req: on: auth: list: apikey: '$': { file: './web_list_apikey' }
-aim: req: on: auth: revoke: apikey: '$': { file: './web_revoke_apikey' }`;
+aim: web: on: auth: create: apikey: '$': { file: './web_create_apikey' }
+aim: web: on: auth: list: apikey: '$': { file: './web_list_apikey' }
+aim: web: on: auth: revoke: apikey: '$': { file: './web_revoke_apikey' }`;
 const WEB_ENT_DECL = `
 # API access keys (REST API auth). The raw key is shown ONCE at creation;
 # only a sha-256 hash is stored. Managed via aim:auth,{create,list,revoke}:apikey
