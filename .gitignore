@@ -114,3 +114,6 @@ yarn.lock
 
 test/coverage.html
 
+
+# compiled tests (node:test runs dist-test/)
+dist-test

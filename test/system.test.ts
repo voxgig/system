@@ -1,6 +1,9 @@
 /* Copyright (c) 2022 Richard Rodger and other contributors, MIT License */
 
 
+import { describe, test } from 'node:test'
+import assert from 'node:assert'
+
 import {
   System,
   Utility,
@@ -18,65 +21,51 @@ describe('system', () => {
   })
 
   test('listmsgs', () => {
-    expect(listmsgs()).toEqual([])
+    assert.deepEqual(listmsgs(), [])
 
 
-    expect(listmsgs({ a: {} }).map(m => m.pattern))
-      .toEqual([])
+    assert.deepEqual(listmsgs({ a: {} }).map(m => m.pattern), [])
 
-    expect(listmsgs({ a: { b: {} } }).map(m => m.pattern))
-      .toEqual(['a:b'])
+    assert.deepEqual(listmsgs({ a: { b: {} } }).map(m => m.pattern), ['a:b'])
 
-    expect(listmsgs({ a: { b: { c: {} } } }).map(m => m.pattern))
-      .toEqual([])
+    assert.deepEqual(listmsgs({ a: { b: { c: {} } } }).map(m => m.pattern), [])
 
-    expect(listmsgs({ a: { b: { c: { d: {} } } } }).map(m => m.pattern))
-      .toEqual(['a:b,c:d'])
+    assert.deepEqual(listmsgs({ a: { b: { c: { d: {} } } } }).map(m => m.pattern), ['a:b,c:d'])
 
-    expect(listmsgs({ a: { b: { c: { d: { e: {} } } } } }).map(m => m.pattern))
-      .toEqual([])
+    assert.deepEqual(listmsgs({ a: { b: { c: { d: { e: {} } } } } }).map(m => m.pattern), [])
 
-    expect(listmsgs({ a: { b: { c: { d: { e: { f: {} } } } } } }).map(m => m.pattern))
-      .toEqual(['a:b,c:d,e:f'])
+    assert.deepEqual(listmsgs({ a: { b: { c: { d: { e: { f: {} } } } } } }).map(m => m.pattern), ['a:b,c:d,e:f'])
 
 
-    expect(listmsgs({ a: { b: {}, c: {} } }).map(m => m.pattern))
-      .toEqual(['a:b', 'a:c'])
+    assert.deepEqual(listmsgs({ a: { b: {}, c: {} } }).map(m => m.pattern), ['a:b', 'a:c'])
 
-    expect(listmsgs({ a: { b: {}, c: {} }, d: { e: {} } }).map(m => m.pattern))
-      .toEqual(['a:b', 'a:c', 'd:e'])
+    assert.deepEqual(listmsgs({ a: { b: {}, c: {} }, d: { e: {} } }).map(m => m.pattern), ['a:b', 'a:c', 'd:e'])
 
-    expect(listmsgs({ a: { b: {}, c: {} }, d: { e: {}, f: {} } }).map(m => m.pattern))
-      .toEqual(['a:b', 'a:c', 'd:e', 'd:f'])
+    assert.deepEqual(listmsgs({ a: { b: {}, c: {} }, d: { e: {}, f: {} } }).map(m => m.pattern), ['a:b', 'a:c', 'd:e', 'd:f'])
 
-    expect(listmsgs({
+    assert.deepEqual(listmsgs({
       a: { b: {}, c: { g: {} } },
       d: { e: {}, f: {}, h: { i: {} } }
-    }).map(m => m.pattern))
-      .toEqual(['a:b', 'd:e', 'd:f'])
+    }).map(m => m.pattern), ['a:b', 'd:e', 'd:f'])
 
-    expect(listmsgs({
+    assert.deepEqual(listmsgs({
       a: { b: {}, c: { g: { j: {} } } },
       d: { e: {}, f: {}, h: { i: {} } }
-    }).map(m => m.pattern))
-      .toEqual(['a:b', 'a:c,g:j', 'd:e', 'd:f'])
+    }).map(m => m.pattern), ['a:b', 'a:c,g:j', 'd:e', 'd:f'])
 
-    expect(listmsgs({
+    assert.deepEqual(listmsgs({
       a: { b: {}, c: { g: { j: {} } } },
       d: { e: {}, f: {}, h: { i: { k: {} } } }
-    }).map(m => m.pattern))
-      .toEqual(['a:b', 'a:c,g:j', 'd:e', 'd:f', 'd:h,i:k'])
+    }).map(m => m.pattern), ['a:b', 'a:c,g:j', 'd:e', 'd:f', 'd:h,i:k'])
 
-    expect(listmsgs({
+    assert.deepEqual(listmsgs({
       a: { b: {}, c: { g: { j: { l: { m: {} } } } } },
       d: { e: {}, f: {}, h: { i: { k: {} } } }
-    }).map(m => m.pattern))
-      .toEqual(['a:b', 'a:c,g:j,l:m', 'd:e', 'd:f', 'd:h,i:k'])
+    }).map(m => m.pattern), ['a:b', 'a:c,g:j,l:m', 'd:e', 'd:f', 'd:h,i:k'])
 
-    expect(listmsgs({
+    assert.deepEqual(listmsgs({
       a: { b: { $: {}, c: { d: {} } } }
-    }).map(m => m.pattern))
-      .toEqual(['a:b,c:d', 'a:b'])
+    }).map(m => m.pattern), ['a:b,c:d', 'a:b'])
 
 
   })

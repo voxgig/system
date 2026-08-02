@@ -7,8 +7,8 @@ operational guidance.
 ## Commands
 
 ```bash
-npm run build   # tsc -> dist/
-npm test        # jest
+npm run build   # tsc -> dist/ + dist-test/ (tests)
+npm test        # node:test + coverage thresholds
 ```
 
 ## Layout
