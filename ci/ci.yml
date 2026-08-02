@@ -1,0 +1,47 @@
+# CI for @voxgig/system: compile and run the suite with its coverage gate.
+#
+# DORMANT. This file is not active while it lives in ci/ - GitHub only runs
+# workflows under .github/workflows/. See ci/README.md to activate.
+
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: install
+        run: npm ci
+
+      # MUST run before the tests. The suite executes compiled output from
+      # dist-test/; without a build, `npm test` reports "0 tests, 100%
+      # coverage" and exits 0 - green, and completely meaningless.
+      - name: build
+        run: npm run build
+
+      - name: test
+        run: npm run test-cov
+
+      - name: upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.lcov
+          if-no-files-found: warn
