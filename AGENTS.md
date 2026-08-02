@@ -17,9 +17,13 @@ npm test        # node:test + coverage thresholds
   `Template`, `gubuify`, `Utility`); `srv/make.ts` — `MakeSrv`.
 - `cmd.ts` — the `voxgig-system` CLI (usage text at the top).
 - `lib/add.ts` — model-editing (`add entity/srv/msg/field/env`). `addEnv`
-  kind `web` appends `WEB_SRV_DECL` / `WEB_MSG_DECL` (auth + generic ent
-  services and their messages) to `srv.aontu` / `msg.aontu` — idempotent,
-  guarded on `main.srv.auth` being absent.
+  kind `web` appends `WEB_SRV_DECL` / `WEB_MSG_DECL` / `WEB_ENT_DECL`
+  (auth + generic ent + REST api services, their messages, and the
+  sys/apikey entity) — idempotent, guarded on `main.srv.auth` being
+  absent. The messages define **the browser surface**: `aim:web` proxies
+  only (`web_*` action files). A browser may send nothing else — the
+  generated gateway allows just `aim:web` — so new browser operations are
+  added as proxies here, never by widening the allow-list.
 - `lib/template.ts` — template list/eject/diff over `@voxgig/build`'s
   `Fragments` API.
 
