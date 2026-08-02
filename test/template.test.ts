@@ -1,5 +1,8 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License */
 
+import { describe, test } from 'node:test'
+import assert from 'node:assert'
+
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
@@ -43,11 +46,11 @@ describe('template', () => {
     const rows = listTemplates(root)
 
     const srvgen = rows.find((r) => 'srv_yml' === r.name)!
-    expect(srvgen.kind).toEqual('generator')
-    expect(srvgen.layer).toEqual('package')
+    assert.deepEqual(srvgen.kind, 'generator')
+    assert.deepEqual(srvgen.layer, 'package')
 
     const frag = rows.find((r) => 'lambda/srv.yml.frag' === r.name)!
-    expect(frag.layer).toEqual('package')
+    assert.deepEqual(frag.layer, 'package')
   })
 
 
@@ -55,27 +58,24 @@ describe('template', () => {
     const root = makeProject()
 
     const dest = ejectFragment(root, 'srv.yml.frag')
-    expect(dest.endsWith(Path.join('tm', 'lambda', 'srv.yml.frag')))
-      .toEqual(true)
-    expect(Fs.readFileSync(dest, 'utf8')).toContain('$$name$$:')
+    assert.deepEqual(dest.endsWith(Path.join('tm', 'lambda', 'srv.yml.frag')), true)
+    assert.ok((Fs.readFileSync(dest, 'utf8')).includes('$$name$$:'))
 
     // provenance recorded
     const prov = JSON.parse(Fs.readFileSync(Path.join(
       Path.dirname(Path.dirname(dest)), '.ejected.json'), 'utf8'))
-    expect(prov['lambda/srv.yml.frag'].version).toEqual('4.1.0')
+    assert.deepEqual(prov['lambda/srv.yml.frag'].version, '4.1.0')
 
     // layer now shows project
     const rows = listTemplates(root)
-    expect(rows.find((r) => 'lambda/srv.yml.frag' === r.name)!.layer)
-      .toContain('project')
+    assert.ok((rows.find((r) => 'lambda/srv.yml.frag' === r.name)!.layer).includes('project'))
 
     // double eject refuses
-    expect(() => ejectFragment(root, 'srv.yml.frag'))
-      .toThrow(/already ejected/)
+    assert.throws(() => ejectFragment(root, 'srv.yml.frag'), { message: new RegExp(/already ejected/) })
 
     // generator shorthand maps to its fragment
     const dest2 = ejectFragment(root, 'res_yml')
-    expect(dest2.endsWith('res.role.yml.frag')).toEqual(true)
+    assert.deepEqual(dest2.endsWith('res.role.yml.frag'), true)
   })
 
 
@@ -84,15 +84,14 @@ describe('template', () => {
 
     const dest = ejectCode(root, 'srv_yml')
     const src = Fs.readFileSync(dest, 'utf8')
-    expect(src).toContain("from '@voxgig/build'")
-    expect(src).not.toContain("from './generate'")
-    expect(src).toContain('Ejected from @voxgig/build 4.1.0')
+    assert.ok((src).includes("from '@voxgig/build'"))
+    assert.ok(!(src).includes("from './generate'"))
+    assert.ok((src).includes('Ejected from @voxgig/build 4.1.0'))
 
     const rows = listTemplates(root)
-    expect(rows.find((r) => 'srv_yml' === r.name)!.layer)
-      .toContain('src/gen')
+    assert.ok((rows.find((r) => 'srv_yml' === r.name)!.layer).includes('src/gen'))
 
-    expect(() => ejectCode(root, 'nope')).toThrow(/unknown generator/)
+    assert.throws(() => ejectCode(root, 'nope'), { message: new RegExp(/unknown generator/) })
   })
 
 
@@ -102,21 +101,74 @@ describe('template', () => {
 
     // unchanged upstream, identical copy
     let rows = diffTemplates(root)
-    expect(rows[0].upstream).toEqual('unchanged')
-    expect(rows[0].diff).toEqual('')
+    assert.deepEqual(rows[0].upstream, 'unchanged')
+    assert.deepEqual(rows[0].diff, '')
 
     // local edit -> diff appears
     const proj = Path.join(root, 'backend', 'tm', 'lambda', 'srv.yml.frag')
     Fs.appendFileSync(proj, '  memory: 4096\n')
     rows = diffTemplates(root)
-    expect(rows[0].diff).toContain('+  memory: 4096')
+    assert.ok(String(rows[0].diff).includes('+  memory: 4096'))
 
     // upstream bump -> flagged
     const pkgfrag = Path.join(root, 'backend', 'node_modules',
       '@voxgig', 'build', 'tm', 'lambda', 'srv.yml.frag')
     Fs.appendFileSync(pkgfrag, '  new: line\n')
     rows = diffTemplates(root)
-    expect(rows[0].upstream).toEqual('changed')
+    assert.deepEqual(rows[0].upstream, 'changed')
   })
 
+})
+
+
+describe('template errors', () => {
+
+  test('missing @voxgig/build is reported', () => {
+    const root = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'vgs-nobuild-'))
+    const model = Path.join(root, 'backend', 'model')
+    Fs.mkdirSync(model, { recursive: true })
+    Fs.writeFileSync(Path.join(model, 'model.aontu'), '\nmain: {}\n')
+    assert.throws(() => listTemplates(root), { message: /@voxgig\/build not found/ })
+  })
+
+  test('unknown fragment lists the available ones', () => {
+    const root = makeProject()
+    assert.throws(() => ejectFragment(root, 'nope.frag'),
+      { message: /unknown fragment: lambda\/nope.frag/ })
+  })
+
+  test('a fragment cannot be ejected twice', () => {
+    const root = makeProject()
+    ejectFragment(root, 'srv.yml.frag')
+    assert.throws(() => ejectFragment(root, 'srv.yml.frag'),
+      { message: /already ejected/ })
+  })
+
+  test('a generator cannot be ejected twice', () => {
+    const root = makeProject()
+    ejectCode(root, 'srv_yml')
+    assert.throws(() => ejectCode(root, 'srv_yml'), { message: /already ejected/ })
+  })
+
+  test('unknown generator names are rejected', () => {
+    const root = makeProject()
+    assert.throws(() => ejectCode(root, 'nope'), { message: /unknown generator/ })
+  })
+
+  test('a generator missing from the installed package is reported', () => {
+    const root = makeProject()
+    Fs.rmSync(Path.join(root, 'backend', 'node_modules', '@voxgig', 'build',
+      'env', 'lambda', 'srv_yml.ts'))
+    assert.throws(() => ejectCode(root, 'srv_yml'),
+      { message: /not shipped by installed/ })
+  })
+
+  test('diff flags a fragment the package no longer ships', () => {
+    const root = makeProject()
+    ejectFragment(root, 'srv.yml.frag')
+    Fs.rmSync(Path.join(root, 'backend', 'node_modules', '@voxgig', 'build',
+      'tm', 'lambda', 'srv.yml.frag'))
+    const rows = diffTemplates(root)
+    assert.deepEqual(rows[0].upstream, 'missing')
+  })
 })

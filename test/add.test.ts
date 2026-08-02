@@ -1,5 +1,8 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License */
 
+import { describe, test } from 'node:test'
+import assert from 'node:assert'
+
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
@@ -51,9 +54,9 @@ describe('add', () => {
     for (const start of [root, Path.join(root, 'backend'),
       Path.join(root, 'backend', 'model')]) {
       const files = resolveModelFiles(start)
-      expect(files.ent.endsWith('ent.aontu')).toEqual(true)
-      expect(files.msg.endsWith('msg.aontu')).toEqual(true)
-      expect(files.srv.endsWith('srv.aontu')).toEqual(true)
+      assert.deepEqual(files.ent.endsWith('ent.aontu'), true)
+      assert.deepEqual(files.msg.endsWith('msg.aontu'), true)
+      assert.deepEqual(files.srv.endsWith('srv.aontu'), true)
     }
   })
 
@@ -70,9 +73,9 @@ describe('add', () => {
     Fs.writeFileSync(Path.join(model, 'srv.jsonic'), '\n')
 
     const files = resolveModelFiles(root)
-    expect(files.model.endsWith('model.jsonic')).toEqual(true)
-    expect(files.ent.endsWith('ent.jsonic')).toEqual(true)
-    expect(files.msg.endsWith('msg.jsonic')).toEqual(true)
+    assert.deepEqual(files.model.endsWith('model.jsonic'), true)
+    assert.deepEqual(files.ent.endsWith('ent.jsonic'), true)
+    assert.deepEqual(files.msg.endsWith('msg.jsonic'), true)
   })
 
 
@@ -80,28 +83,28 @@ describe('add', () => {
     const root = makeProject()
     addEntity(root, 'thing')
     const ent = read(root, 'ent.aontu')
-    expect(ent).toContain('app: &: $.main.shape.ent')
-    expect(ent).toContain('app: thing: {')
-    expect(ent).toContain("'$$': 'Open'")
+    assert.ok((ent).includes('app: &: $.main.shape.ent'))
+    assert.ok((ent).includes('app: thing: {'))
+    assert.ok((ent).includes("'$$': 'Open'"))
 
     // second entity in same zone: no duplicate zone shape line
     addEntity(root, 'other')
     const ent2 = read(root, 'ent.aontu')
-    expect(ent2.match(/app: &: /g)!.length).toEqual(1)
-    expect(ent2).toContain('app: other: {')
+    assert.deepEqual(ent2.match(/app: &: /g)!.length, 1)
+    assert.ok((ent2).includes('app: other: {'))
   })
 
 
   test('add-entity-zone-and-spec', () => {
     const root = makeProject()
     addEntity(root, 'qaz/foo')
-    expect(read(root, 'ent.aontu')).toContain('qaz: foo: {')
+    assert.ok((read(root, 'ent.aontu')).includes('qaz: foo: {'))
 
     addEntity(root, '{name:bar,zone:qaz,field:{title:{kind:String}}}')
     const ent = read(root, 'ent.aontu')
-    expect(ent).toContain('qaz: bar: {')
-    expect(ent).toContain('kind: String')
-    expect(ent.match(/qaz: &: /g)!.length).toEqual(1)
+    assert.ok((ent).includes('qaz: bar: {'))
+    assert.ok((ent).includes('kind: String'))
+    assert.deepEqual(ent.match(/qaz: &: /g)!.length, 1)
   })
 
 
@@ -109,30 +112,30 @@ describe('add', () => {
     const root = makeProject()
     addSrv(root, 'thing')
     const srv = read(root, 'srv.aontu')
-    expect(srv).toContain('thing: {')
-    expect(srv).toContain("area: 'private/'")
-    expect(srv).toContain('required: true')
+    assert.ok((srv).includes('thing: {'))
+    assert.ok((srv).includes("area: 'private/'"))
+    assert.ok((srv).includes('required: true'))
 
     addSrv(root, '{name:pub,user:{required:false}}')
     const srv2 = read(root, 'srv.aontu')
-    expect(srv2).toContain('pub: {')
-    expect(srv2).toContain('required: false')
+    assert.ok((srv2).includes('pub: {'))
+    assert.ok((srv2).includes('required: false'))
   })
 
 
   test('add-msg', () => {
     const root = makeProject()
     addMsg(root, 'thing.get.info')
-    expect(read(root, 'msg.aontu')).toContain('aim: thing: get: info: {}')
+    assert.ok((read(root, 'msg.aontu')).includes('aim: thing: get: info: {}'))
 
     addMsg(root, 'aim:thing:list:item')
-    expect(read(root, 'msg.aontu')).toContain('aim: thing: list: item: {}')
+    assert.ok((read(root, 'msg.aontu')).includes('aim: thing: list: item: {}'))
 
     addMsg(root, "{name:thing.save.item,params:{item:{'$$':'Open',title:String}}}")
     const msg = read(root, 'msg.aontu')
-    expect(msg).toContain("aim: thing: save: item: '$': {")
-    expect(msg).toContain("'$$': 'Open'")
-    expect(msg).toContain('title: String')
+    assert.ok((msg).includes("aim: thing: save: item: '$': {"))
+    assert.ok((msg).includes("'$$': 'Open'"))
+    assert.ok((msg).includes('title: String'))
   })
 
 
@@ -146,20 +149,20 @@ describe('add', () => {
       'owner_id',
     ])
     const ent = read(root, 'ent.aontu')
-    expect(ent).toContain('app: thing: field: title: {')
-    expect(ent).toContain("label: 'Title'")
-    expect(ent).toContain('kind: Boolean')
-    expect(ent).toContain('valid: Skip')
-    expect(ent).toContain("label: 'Owner Id'")
+    assert.ok((ent).includes('app: thing: field: title: {'))
+    assert.ok((ent).includes("label: 'Title'"))
+    assert.ok((ent).includes('kind: Boolean'))
+    assert.ok((ent).includes('valid: Skip'))
+    assert.ok((ent).includes("label: 'Owner Id'"))
   })
 
 
   test('add-errors', () => {
     const root = makeProject()
-    expect(() => addEntity(root, '[1,2]')).toThrow(/invalid entity/)
-    expect(() => addMsg(root, '{nope:1}')).toThrow(/invalid msg/)
-    expect(() => addFields(root, 'thing', [])).toThrow(/no fields/)
-    expect(() => resolveModelFiles(Os.tmpdir())).toThrow(/model folder not found/)
+    assert.throws(() => addEntity(root, '[1,2]'), { message: new RegExp(/invalid entity/) })
+    assert.throws(() => addMsg(root, '{nope:1}'), { message: new RegExp(/invalid msg/) })
+    assert.throws(() => addFields(root, 'thing', []), { message: new RegExp(/no fields/) })
+    assert.throws(() => resolveModelFiles(Os.tmpdir()), { message: new RegExp(/model folder not found/) })
   })
 
 })
@@ -170,11 +173,11 @@ describe('gubuify-open', () => {
   test('open-marker-allows-extra-props', () => {
     const shape = gubuify({ item: { '$$': 'Open', title: 'String' } }, Gubu)
     const out = shape({ item: { title: 'x', extra: 1 } })
-    expect(out.item.extra).toEqual(1)
+    assert.deepEqual(out.item.extra, 1)
 
     // without the marker, extra props are rejected
     const closed = gubuify({ item: { title: 'String' } }, Gubu)
-    expect(() => closed({ item: { title: 'x', extra: 1 } })).toThrow()
+    assert.throws(() => closed({ item: { title: 'x', extra: 1 } }))
   })
 
 })
@@ -199,28 +202,27 @@ describe('add-idempotency', () => {
 
     const entlen = Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length
 
-    expect(addEntity(root, 'thing').skipped).toEqual(true)
-    expect(addSrv(root, 'thing').skipped).toEqual(true)
-    expect(addMsg(root, 'thing.save.item').skipped).toEqual(true)
-    expect(addMsg(root, 'aim:thing:save:item').skipped).toEqual(true)
+    assert.deepEqual(addEntity(root, 'thing').skipped, true)
+    assert.deepEqual(addSrv(root, 'thing').skipped, true)
+    assert.deepEqual(addMsg(root, 'thing.save.item').skipped, true)
+    assert.deepEqual(addMsg(root, 'aim:thing:save:item').skipped, true)
 
     const fields = addFields(root, 'thing', ['title', 'done:Boolean'])
-    expect(fields[0].skipped).toEqual(true)      // title exists
-    expect(fields[1].skipped).toBeUndefined()    // done is new
+    assert.deepEqual(fields[0].skipped, true)      // title exists
+    assert.strictEqual(fields[1].skipped, undefined)    // done is new
 
     // nothing appended for the skips
-    expect(Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length)
-      .toBeGreaterThan(entlen) // only the new 'done' field grew the file
+    assert.ok(((Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length) > (entlen))) // only the new 'done' field grew the file
 
     // new elements still append
-    expect(addEntity(root, 'other').skipped).toBeUndefined()
-    expect(addMsg(root, 'thing.load.item').skipped).toBeUndefined()
+    assert.strictEqual(addEntity(root, 'other').skipped, undefined)
+    assert.strictEqual(addMsg(root, 'thing.load.item').skipped, undefined)
   })
 
 
   test('no-compiled-model-appends', () => {
     const root = makeProject() // no model.json
-    expect(addEntity(root, 'thing').skipped).toBeUndefined()
+    assert.strictEqual(addEntity(root, 'thing').skipped, undefined)
   })
 
 })
@@ -232,15 +234,15 @@ describe('add-env', () => {
     const root = makeProject()
 
     const r1 = addEnv(root, 'aws')
-    expect(r1.file.endsWith('model.aontu')).toEqual(true)
-    expect(r1.text).toContain('main: env: aws: {')
-    expect(r1.text).toContain('active: true')
+    assert.deepEqual(r1.file.endsWith('model.aontu'), true)
+    assert.ok((r1.text).includes('main: env: aws: {'))
+    assert.ok((r1.text).includes('active: true'))
 
     const r2 = addEnv(root, '{name:aws2,kind:aws,region:eu-west-1,stage:prd}')
-    expect(r2.text).toContain('main: env: aws2: {')
-    expect(r2.text).toContain("region: 'eu-west-1'")
+    assert.ok((r2.text).includes('main: env: aws2: {'))
+    assert.ok((r2.text).includes("region: 'eu-west-1'"))
 
-    expect(() => addEnv(root, 'mainframe')).toThrow(/unknown environment kind/)
+    assert.throws(() => addEnv(root, 'mainframe'), { message: new RegExp(/unknown environment kind/) })
   })
 
 
@@ -254,15 +256,15 @@ describe('add-env', () => {
     Fs.writeFileSync(Path.join(model, 'env.aontu'), '\nlocal: { active: true }\n')
 
     const r = addEnv(root, 'docker')
-    expect(r.file.endsWith('env.aontu')).toEqual(true)
-    expect(r.text).toContain('docker: {')
-    expect(r.text).not.toContain('main: env:')
+    assert.deepEqual(r.file.endsWith('env.aontu'), true)
+    assert.ok((r.text).includes('docker: {'))
+    assert.ok(!(r.text).includes('main: env:'))
 
     // idempotent via compiled model
     Fs.writeFileSync(Path.join(model, 'model.json'), JSON.stringify({
       main: { env: { docker: { active: true } } },
     }))
-    expect(addEnv(root, 'docker').skipped).toEqual(true)
+    assert.deepEqual(addEnv(root, 'docker').skipped, true)
   })
 
 })
