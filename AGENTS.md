@@ -1,0 +1,46 @@
+# Agent guide: @voxgig/system
+
+Runtime (MakeSrv/Local/Live) and the `voxgig-system` CLI for Voxgig system
+projects. Concepts: [README.md](README.md) + [docs/](docs/); this file is
+operational guidance.
+
+## Commands
+
+```bash
+npm run build   # tsc -> dist/
+npm test        # jest
+```
+
+## Layout
+
+- `system.ts` — exports (`System`, `MakeSrv`, `Local`, `Live`, `Add`,
+  `Template`, `gubuify`, `Utility`); `srv/make.ts` — `MakeSrv`.
+- `cmd.ts` — the `voxgig-system` CLI (usage text at the top).
+- `lib/add.ts` — model-editing (`add entity/srv/msg/field/env`). `addEnv`
+  kind `web` appends `WEB_SRV_DECL` / `WEB_MSG_DECL` (auth + generic ent
+  services and their messages) to `srv.aontu` / `msg.aontu` — idempotent,
+  guarded on `main.srv.auth` being absent.
+- `lib/template.ts` — template list/eject/diff over `@voxgig/build`'s
+  `Fragments` API.
+
+## Hard rules
+
+- **`dist/` is committed** — always `npm run build` before committing.
+- `add` commands APPEND jsonic to model files (aontu unifies); never
+  change them to rewrite files — preserving user formatting/comments is a
+  feature under test.
+- The aontu appended by `WEB_SRV_DECL`/`WEB_MSG_DECL` must stay in sync
+  with what `@voxgig/build` EnvWeb's generated services implement (the
+  reference pairing is `metsitaba/todo-app`'s model). If you change one,
+  change the other and verify a fresh project compiles
+  (`npm run model-build` + `tsc`).
+- MakeSrv convention: a model message maps to the action file named after
+  its LAST pattern pair (`save:item` → `save_item.ts`). Only declare
+  messages whose action files exist — boot fails otherwise.
+
+## Model gotchas
+
+- Aontu/jsonic comments are `#`; quote values containing `-`, `/`, `#`.
+- Gubu message params are closed by default; `'$$': 'Open'` opens them.
+- Relationship fields: `kind: String` + `ref: 'zone/name'` attr (+
+  usually `valid: Skip`); `kind: 'Ref'` is invalid.
