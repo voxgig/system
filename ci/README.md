@@ -1,15 +1,10 @@
-# CI workflow (dormant)
+# CI
 
-GitHub only runs workflows found under `.github/workflows/`. This lives in
-`ci/`, so it is **inert** until deliberately activated.
+`ci.yml` is **active**, at `.github/workflows/ci.yml`. It ran dormant in
+this folder while it was being built; it now runs on every push and pull
+request. This folder keeps the notes.
 
-## Activate
-
-```bash
-mkdir -p .github/workflows
-git mv ci/ci.yml .github/workflows/ci.yml
-git commit -m 'ci: activate workflow'
-```
+Verified before activation: 45/45 tests, coverage gate clear.
 
 ## What runs
 
