@@ -4,6 +4,7 @@ import { MakeSrv } from './srv/make';
 import { addEntity, addSrv, addMsg, addFields, addEnv, resolveModelFiles } from './lib/add';
 import { listTemplates, ejectFragment, ejectCode, diffTemplates } from './lib/template';
 import { context } from './lib/context';
+import { devtools } from './lib/devtools';
 declare function messages(seneca: any, options: any, reload: any): void;
 declare function gubuify(params: any, Gubu: any): any;
 declare function prepare(seneca: any, require: any): void;
@@ -35,4 +36,4 @@ declare const Template: {
     ejectCode: typeof ejectCode;
     diff: typeof diffTemplates;
 };
-export { Add, Template, context, gubuify, System, MakeSrv, Utility, Local, Live, };
+export { Add, Template, context, devtools, gubuify, System, MakeSrv, Utility, Local, Live, };
