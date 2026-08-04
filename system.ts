@@ -15,6 +15,7 @@ import { MakeSrv } from './srv/make'
 
 import { addEntity, addSrv, addMsg, addFields, addEnv, resolveModelFiles } from './lib/add'
 import { listTemplates, ejectFragment, ejectCode, diffTemplates } from './lib/template'
+import { context } from './lib/context'
 
 
 
@@ -236,6 +237,7 @@ const Template = {
 export {
   Add,
   Template,
+  context,
   gubuify,
   System,
   MakeSrv,
