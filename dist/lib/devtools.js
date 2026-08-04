@@ -82,12 +82,15 @@ function replPort(model, spec, env) {
     const name = envPrefix(model, spec) + 'REPL_PORT';
     const raw = env[name];
     if (null != raw && '' !== raw) {
-        const port = parseInt(raw, 10);
-        if (!Number.isInteger(port)) {
+        // Test the RAW string, not parseInt's result: parseInt('40404x') is
+        // 40404 and parseInt('12.5') is 12, so checking only the number back
+        // would silently accept a malformed port.
+        const val = raw.trim();
+        if (!/^\d+$/.test(val)) {
             throw new Error('voxgig-system: ' + name + ' must be an integer, got: ' +
                 JSON.stringify(raw));
         }
-        return port;
+        return parseInt(val, 10);
     }
     const port = model && model.main && model.main.conf &&
         model.main.conf.port && model.main.conf.port.repl;

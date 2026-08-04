@@ -169,11 +169,25 @@ describe('devtools', () => {
       /SENECA_REPL must be a boolean/)
 
     delete process.env.SENECA_REPL
-    process.env.SENECA_REPL_PORT = 'wat'
-    assert.throws(
-      () => devtools(fakeSeneca(),
-        model({ conf: { dev: { repl: true } } }), { env: 'local' }),
-      /SENECA_REPL_PORT must be an integer/)
+
+    // A port must be a WHOLE integer string. parseInt would happily
+    // truncate every one of these - '40404x' to 40404, '12.5' to 12,
+    // '1e3' to 1 - and checking only the parsed result would pass.
+    for (const bad of ['wat', '40404x', '12.5', '1e3', '0x50', ' ', '-1']) {
+      process.env.SENECA_REPL_PORT = bad
+      assert.throws(
+        () => devtools(fakeSeneca(),
+          model({ conf: { dev: { repl: true } } }), { env: 'local' }),
+        /SENECA_REPL_PORT must be an integer/,
+        'accepted ' + JSON.stringify(bad))
+    }
+
+    // Surrounding whitespace is still fine.
+    process.env.SENECA_REPL_PORT = ' 40404 '
+    assert.strictEqual(
+      devtools(fakeSeneca(), model({ conf: { dev: { repl: true } } }),
+        { env: 'local' }).port,
+      40404)
   })
 
 
