@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Utility = exports.MakeSrv = exports.System = exports.Template = exports.Add = void 0;
+exports.Utility = exports.MakeSrv = exports.System = exports.context = exports.Template = exports.Add = void 0;
 exports.gubuify = gubuify;
 exports.Local = Local;
 exports.Live = Live;
@@ -16,6 +16,8 @@ const make_1 = require("./srv/make");
 Object.defineProperty(exports, "MakeSrv", { enumerable: true, get: function () { return make_1.MakeSrv; } });
 const add_1 = require("./lib/add");
 const template_1 = require("./lib/template");
+const context_1 = require("./lib/context");
+Object.defineProperty(exports, "context", { enumerable: true, get: function () { return context_1.context; } });
 const { srvmsgs, deep } = utility_1.Utility;
 function messages(seneca, options, reload) {
     let srvname = seneca.fixedargs.plugin$.name.replace(/^srv_/, '');
