@@ -16,6 +16,7 @@ import { MakeSrv } from './srv/make'
 import { addEntity, addSrv, addMsg, addFields, addEnv, resolveModelFiles } from './lib/add'
 import { listTemplates, ejectFragment, ejectCode, diffTemplates } from './lib/template'
 import { context } from './lib/context'
+import { devtools } from './lib/devtools'
 
 
 
@@ -238,6 +239,7 @@ export {
   Add,
   Template,
   context,
+  devtools,
   gubuify,
   System,
   MakeSrv,
