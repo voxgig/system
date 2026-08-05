@@ -149,6 +149,48 @@ function parseArg(arg, kind) {
     throw new Error('invalid ' + kind + ' argument: ' + arg +
         ' - provide a name, {name:...,...spec}, or {thename:{...spec}}');
 }
+// Split a definition against what the compiled model already holds.
+//
+// `fresh` is the sub-tree of paths NOT yet set - safe to append, because
+// aontu unifies it in. `conflicts` are paths already set to a DIFFERENT
+// value: appending those is NOT a merge, it is a build error -
+//
+//   [aontu/scalar_value]: Cannot unify values at path $.main.env.aws.stage
+//   Cannot unify value: "prd" with value: "dev"
+//
+// aontu unifies, it does not override, so a changed value cannot be
+// applied by appending. It is reported for the user to edit by hand,
+// rather than written and left to break the next model build.
+function diffDef(want, have, path) {
+    const conflicts = [];
+    function walk(w, h, p) {
+        if (undefined === h) {
+            return w;
+        }
+        const bothMaps = null != w && 'object' === typeof w && !Array.isArray(w) &&
+            null != h && 'object' === typeof h && !Array.isArray(h);
+        if (!bothMaps) {
+            // A leaf (or a shape change): equal is a no-op, different is a
+            // conflict. Arrays compare whole - aontu unifies them elementwise,
+            // and second-guessing that here would be worse than saying so.
+            if (JSON.stringify(w) !== JSON.stringify(h)) {
+                conflicts.push({ path: p, current: h, wanted: w });
+            }
+            return undefined;
+        }
+        const out = {};
+        let any = false;
+        for (const k of Object.keys(w)) {
+            const sub = walk(w[k], h[k], p + '.' + k);
+            if (undefined !== sub) {
+                out[k] = sub;
+                any = true;
+            }
+        }
+        return any ? out : undefined;
+    }
+    return { fresh: walk(want, have, path), conflicts };
+}
 // The last compiled model (model.json next to the model source), used to
 // make the add operations idempotent: an element that already exists in
 // the compiled model is skipped rather than appended again. Formatting
@@ -520,20 +562,37 @@ sys: apikey: {
 function addEnv(start, arg) {
     var _a, _b, _c, _d;
     const files = resolveModelFiles(start);
-    const { name, def } = parseArg(arg, 'env');
+    const { name, def: wanted } = parseArg(arg, 'env');
+    let def = wanted;
     const kind = def.kind || name;
     if (!ENV_KINDS.includes(kind)) {
         throw new Error('unknown environment kind: ' + kind +
             ' (known: ' + ENV_KINDS.join(', ') +
             '; use {name:..., kind:...} for a custom-named env)');
     }
-    // Idempotent: environment already in the compiled model.
     const model = compiledModel(files);
-    if ((_b = (_a = model === null || model === void 0 ? void 0 : model.main) === null || _a === void 0 ? void 0 : _a.env) === null || _b === void 0 ? void 0 : _b[name]) {
-        return { file: files.model, text: '', skipped: true };
-    }
+    const existing = (_b = (_a = model === null || model === void 0 ? void 0 : model.main) === null || _a === void 0 ? void 0 : _a.env) === null || _b === void 0 ? void 0 : _b[name];
     if (null == def.active) {
         def.active = true;
+    }
+    // Already declared: MERGE rather than skip outright. Only the keys the
+    // model does not already carry are appended - re-stating an existing key
+    // with a different value would not override it, it would fail the next
+    // model build (aontu unifies). Those are reported instead.
+    let conflicts = [];
+    let merged;
+    if (existing) {
+        const path = 'main.env.' + name;
+        const diff = diffDef(def, existing, path);
+        conflicts = diff.conflicts;
+        if (null == diff.fresh) {
+            return {
+                file: files.model, text: '', skipped: true,
+                ...(conflicts.length ? { conflicts } : {}),
+            };
+        }
+        merged = leafPaths(diff.fresh, path);
+        def = diff.fresh;
     }
     // The web env needs the auth + generic entity services declared in the
     // model so MakeSrv wires the generated service files (idempotent: only when
@@ -549,6 +608,22 @@ function addEnv(start, arg) {
     const target = m ? node_path_1.default.join(files.folder, m[1]) : files.model;
     const prefix = m ? '' : 'main: env: ';
     const text = '\n' + prefix + name + ': ' + fmt(def, 0);
-    return append(target, text);
+    const res = append(target, text);
+    return {
+        ...res,
+        ...(merged ? { merged } : {}),
+        ...(conflicts.length ? { conflicts } : {}),
+    };
+}
+// Every leaf path in a definition, for reporting what a merge appended.
+function leafPaths(def, path) {
+    if (null == def || 'object' !== typeof def || Array.isArray(def)) {
+        return [path];
+    }
+    const keys = Object.keys(def);
+    if (0 === keys.length) {
+        return [path];
+    }
+    return keys.flatMap((k) => leafPaths(def[k], path + '.' + k));
 }
 //# sourceMappingURL=add.js.map

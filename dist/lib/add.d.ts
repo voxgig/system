@@ -9,6 +9,12 @@ export type AddResult = {
     file: string;
     text: string;
     skipped?: boolean;
+    merged?: string[];
+    conflicts?: {
+        path: string;
+        current: any;
+        wanted: any;
+    }[];
 };
 declare function resolveModelFolder(start: string): string;
 declare function resolveModelFiles(start: string): ModelFiles;

@@ -33,6 +33,14 @@ npm test        # node:test + coverage thresholds
 - `add` commands APPEND jsonic to model files (aontu unifies); never
   change them to rewrite files — preserving user formatting/comments is a
   feature under test.
+- **Re-adding MERGES, and cannot change an existing value.** `add env`
+  appends only the paths the compiled model does not already carry; a path
+  already set to a DIFFERENT value is returned in `conflicts` and left
+  alone. This is not timidity — aontu unifies rather than overrides, so
+  appending `stage: 'prd'` beside `stage: 'dev'` does not win, it fails the
+  next model build with `[aontu/scalar_value]: Cannot unify values`.
+  Changing a value is a hand edit. The CLI prints conflicts loudly; never
+  make them silent.
 - The aontu appended by `WEB_SRV_DECL`/`WEB_MSG_DECL` must stay in sync
   with what `@voxgig/build` EnvWeb's generated services implement (the
   reference pairing is `metsitaba/todo-app`'s model). If you change one,

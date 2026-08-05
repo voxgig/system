@@ -31,6 +31,12 @@ export type AddResult = {
   file: string         // file appended to
   text: string         // the appended block ('' when skipped)
   skipped?: boolean    // true when the element already exists (no change)
+  merged?: string[]    // paths appended into an element that already existed
+  conflicts?: {        // paths already set to a DIFFERENT value; see below
+    path: string
+    current: any
+    wanted: any
+  }[]
 }
 
 
@@ -177,6 +183,58 @@ function parseArg(arg: string, kind: string): { name: string, def: any } {
 
   throw new Error('invalid ' + kind + ' argument: ' + arg +
     ' - provide a name, {name:...,...spec}, or {thename:{...spec}}')
+}
+
+
+// Split a definition against what the compiled model already holds.
+//
+// `fresh` is the sub-tree of paths NOT yet set - safe to append, because
+// aontu unifies it in. `conflicts` are paths already set to a DIFFERENT
+// value: appending those is NOT a merge, it is a build error -
+//
+//   [aontu/scalar_value]: Cannot unify values at path $.main.env.aws.stage
+//   Cannot unify value: "prd" with value: "dev"
+//
+// aontu unifies, it does not override, so a changed value cannot be
+// applied by appending. It is reported for the user to edit by hand,
+// rather than written and left to break the next model build.
+function diffDef(want: any, have: any, path: string): {
+  fresh: any, conflicts: { path: string, current: any, wanted: any }[]
+} {
+  const conflicts: { path: string, current: any, wanted: any }[] = []
+
+  function walk(w: any, h: any, p: string): any {
+    if (undefined === h) {
+      return w
+    }
+
+    const bothMaps =
+      null != w && 'object' === typeof w && !Array.isArray(w) &&
+      null != h && 'object' === typeof h && !Array.isArray(h)
+
+    if (!bothMaps) {
+      // A leaf (or a shape change): equal is a no-op, different is a
+      // conflict. Arrays compare whole - aontu unifies them elementwise,
+      // and second-guessing that here would be worse than saying so.
+      if (JSON.stringify(w) !== JSON.stringify(h)) {
+        conflicts.push({ path: p, current: h, wanted: w })
+      }
+      return undefined
+    }
+
+    const out: any = {}
+    let any = false
+    for (const k of Object.keys(w)) {
+      const sub = walk(w[k], h[k], p + '.' + k)
+      if (undefined !== sub) {
+        out[k] = sub
+        any = true
+      }
+    }
+    return any ? out : undefined
+  }
+
+  return { fresh: walk(want, have, path), conflicts }
 }
 
 
@@ -609,7 +667,8 @@ sys: apikey: {
 
 function addEnv(start: string, arg: string): AddResult {
   const files = resolveModelFiles(start)
-  const { name, def } = parseArg(arg, 'env')
+  const { name, def: wanted } = parseArg(arg, 'env')
+  let def = wanted
 
   const kind = def.kind || name
   if (!ENV_KINDS.includes(kind)) {
@@ -618,14 +677,34 @@ function addEnv(start: string, arg: string): AddResult {
       '; use {name:..., kind:...} for a custom-named env)')
   }
 
-  // Idempotent: environment already in the compiled model.
   const model = compiledModel(files)
-  if (model?.main?.env?.[name]) {
-    return { file: files.model, text: '', skipped: true }
-  }
+  const existing = model?.main?.env?.[name]
 
   if (null == def.active) {
     def.active = true
+  }
+
+  // Already declared: MERGE rather than skip outright. Only the keys the
+  // model does not already carry are appended - re-stating an existing key
+  // with a different value would not override it, it would fail the next
+  // model build (aontu unifies). Those are reported instead.
+  let conflicts: { path: string, current: any, wanted: any }[] = []
+  let merged: string[] | undefined
+
+  if (existing) {
+    const path = 'main.env.' + name
+    const diff = diffDef(def, existing, path)
+    conflicts = diff.conflicts
+
+    if (null == diff.fresh) {
+      return {
+        file: files.model, text: '', skipped: true,
+        ...(conflicts.length ? { conflicts } : {}),
+      }
+    }
+
+    merged = leafPaths(diff.fresh, path)
+    def = diff.fresh
   }
 
   // The web env needs the auth + generic entity services declared in the
@@ -645,5 +724,24 @@ function addEnv(start: string, arg: string): AddResult {
 
   const text = '\n' + prefix + name + ': ' + fmt(def, 0)
 
-  return append(target, text)
+  const res = append(target, text)
+
+  return {
+    ...res,
+    ...(merged ? { merged } : {}),
+    ...(conflicts.length ? { conflicts } : {}),
+  }
+}
+
+
+// Every leaf path in a definition, for reporting what a merge appended.
+function leafPaths(def: any, path: string): string[] {
+  if (null == def || 'object' !== typeof def || Array.isArray(def)) {
+    return [path]
+  }
+  const keys = Object.keys(def)
+  if (0 === keys.length) {
+    return [path]
+  }
+  return keys.flatMap((k) => leafPaths(def[k], path + '.' + k))
 }
