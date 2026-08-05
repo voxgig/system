@@ -173,14 +173,37 @@ function requireArgs(args: string[], n: number, what: string) {
   }
 }
 
-function report(results: { file: string, text: string, skipped?: boolean }[]) {
+function report(results: {
+  file: string, text: string, skipped?: boolean,
+  merged?: string[],
+  conflicts?: { path: string, current: any, wanted: any }[],
+}[]) {
   for (const res of results) {
     if (res.skipped) {
       console.log('already present (no change): ' + res.file)
     }
     else {
-      console.log('appended to ' + res.file + ':')
+      console.log(
+        (res.merged ? 'merged into ' : 'appended to ') + res.file + ':')
       console.log(res.text)
+      if (res.merged) {
+        console.log('  new: ' + res.merged.join(', '))
+      }
+    }
+
+    // Never silent: a conflict means the requested value was NOT applied.
+    // It cannot be - aontu unifies rather than overrides, so appending a
+    // different value for a key that already has one fails the next model
+    // build instead of changing it.
+    if (res.conflicts && res.conflicts.length) {
+      console.log('\nNOT applied - already set to a different value:')
+      for (const c of res.conflicts) {
+        console.log('  ' + c.path +
+          ': ' + JSON.stringify(c.current) +
+          '  (wanted ' + JSON.stringify(c.wanted) + ')')
+      }
+      console.log('\nEdit the model by hand to change these: appending the\n' +
+        'new value would not override it, it would fail the model build.')
     }
   }
 }

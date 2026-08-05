@@ -267,4 +267,89 @@ describe('add-env', () => {
     assert.deepEqual(addEnv(root, 'docker').skipped, true)
   })
 
+
+  // Re-adding an env MERGES: the keys the model does not already carry are
+  // appended, and aontu unifies them in. Keys it does carry are left alone
+  // - re-stating one with a different value would not override it, it would
+  // fail the next model build.
+  test('env-merge-on-readd', () => {
+    const root = makeProject()
+    const model = Path.join(root, 'backend', 'model')
+
+    Fs.appendFileSync(Path.join(model, 'model.aontu'),
+      '\nmain: env: @"env.aontu"\n')
+    Fs.writeFileSync(Path.join(model, 'env.aontu'), '\nlocal: { active: true }\n')
+
+    addEnv(root, "{name:aws,region:'us-east-1',stage:dev}")
+    Fs.writeFileSync(Path.join(model, 'model.json'), JSON.stringify({
+      main: { env: { aws: { active: true, region: 'us-east-1', stage: 'dev' } } },
+    }))
+
+    // Nothing new: still a plain skip.
+    const same = addEnv(root, "{name:aws,region:'us-east-1'}")
+    assert.deepEqual(same.skipped, true)
+    assert.deepEqual(same.conflicts, undefined)
+
+    // New keys only: appended, and reported as a merge.
+    const add = addEnv(root, '{name:aws,profile:voxgig,lambda:{memory:512}}')
+    assert.deepEqual(add.skipped, undefined)
+    assert.ok((add.text).includes("profile: 'voxgig'"))
+    assert.ok((add.text).includes('memory: 512'))
+    // Only the fresh keys - the ones already set are NOT restated.
+    assert.ok(!(add.text).includes('region'))
+    assert.ok(!(add.text).includes('stage'))
+    assert.deepEqual(add.merged,
+      ['main.env.aws.profile', 'main.env.aws.lambda.memory'])
+
+    // A CHANGED value cannot be applied by appending: aontu unifies, so
+    // `stage: 'prd'` next to `stage: 'dev'` is a build error, not an
+    // override. It is reported instead of written.
+    const clash = addEnv(root, '{name:aws,stage:prd}')
+    assert.deepEqual(clash.skipped, true)
+    assert.deepEqual(clash.text, '')
+    assert.deepEqual(clash.conflicts, [
+      { path: 'main.env.aws.stage', current: 'dev', wanted: 'prd' },
+    ])
+
+    // Fresh and clashing together: the fresh part still lands, the clash
+    // is still reported, and neither hides the other.
+    const both = addEnv(root, '{name:aws,stage:prd,newkey:1}')
+    assert.ok((both.text).includes('newkey: 1'))
+    assert.ok(!(both.text).includes('prd'))
+    assert.deepEqual(both.merged, ['main.env.aws.newkey'])
+    assert.deepEqual(both.conflicts?.[0].path, 'main.env.aws.stage')
+
+    // An empty map is a leaf for reporting - it declares the key exists.
+    const empty = addEnv(root, '{name:aws,extra:{}}')
+    assert.deepEqual(empty.merged, ['main.env.aws.extra'])
+  })
+
+
+  // `add env web` also declares the services the generated web app needs,
+  // and is guarded on the auth service being absent.
+  test('env-web-declares-services', () => {
+    const root = makeProject()
+    const model = Path.join(root, 'backend', 'model')
+
+    const r = addEnv(root, 'web')
+    assert.ok((r.text).includes('web: {'))
+
+    const srv = Fs.readFileSync(Path.join(model, 'srv.aontu'), 'utf8')
+    assert.ok((srv).includes('auth: {'), 'auth service declared')
+    assert.ok((srv).includes('ent: {'), 'generic entity service declared')
+
+    const msg = Fs.readFileSync(Path.join(model, 'msg.aontu'), 'utf8')
+    assert.ok((msg).includes('aim:'), 'messages declared')
+
+    // Guarded: with auth already in the compiled model the service
+    // declarations are not appended a second time.
+    Fs.writeFileSync(Path.join(model, 'model.json'), JSON.stringify({
+      main: { srv: { auth: {} } },
+    }))
+    const before = Fs.readFileSync(Path.join(model, 'srv.aontu'), 'utf8')
+    addEnv(root, '{name:web2,kind:web}')
+    assert.deepEqual(
+      Fs.readFileSync(Path.join(model, 'srv.aontu'), 'utf8'), before)
+  })
+
 })
