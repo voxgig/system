@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/system",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "main": "dist/system.js",
   "type": "commonjs",
   "types": "dist/system.d.ts",
@@ -49,10 +49,10 @@
     "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "@voxgig/model": ">=2"
+    "@voxgig/model": ">=9.3.1"
   },
   "dependencies": {
-    "@tabnas/jsonic": "0.4.1",
+    "@tabnas/jsonic": "0.4.3",
     "patrun": "^7.3.0"
   },
   "bin": {
