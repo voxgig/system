@@ -71,70 +71,60 @@ describe('system', () => {
   })
 
 
-  // The declared message shape: a flat entry per message, keyed by name, with
-  // the pattern as data. Told apart from a chain node by `pat` being a LIST.
+  // The declared message shape: main.msg is a LIST of definitions, each
+  // carrying its pattern as data.
   test('listmsgs-declared', () => {
 
-    assert.deepEqual(listmsgs({
-      save_item: { pat: [{ aim: 'web' }, { save: 'item' }] }
-    }).map(m => m.pattern), ['aim:web,save:item'])
+    assert.deepEqual(listmsgs([
+      { pat: [{ aim: 'web' }, { save: 'item' }] }
+    ]).map(m => m.pattern), ['aim:web,save:item'])
 
     // A one-pair pattern, and several definitions side by side.
-    assert.deepEqual(listmsgs({
-      get_info: { pat: [{ get: 'info' }] },
-      save_item: { pat: [{ aim: 'web' }, { save: 'item' }] },
-    }).map(m => m.pattern), ['get:info', 'aim:web,save:item'])
+    assert.deepEqual(listmsgs([
+      { pat: [{ get: 'info' }] },
+      { pat: [{ aim: 'web' }, { save: 'item' }] },
+    ]).map(m => m.pattern), ['get:info', 'aim:web,save:item'])
+
+    // THE REASON THE SHAPE IS A LIST: a gateway proxy and the message it
+    // forwards to share their last pattern pair, so a map keyed by message
+    // name could not hold both.
+    assert.deepEqual(listmsgs([
+      { pat: [{ aim: 'todo' }, { save: 'item' }] },
+      { pat: [{ aim: 'web' }, { on: 'todo' }, { save: 'item' }], file: './web_save_item' },
+    ]).map(m => m.pattern), ['aim:todo,save:item', 'aim:web,on:todo,save:item'])
 
     // props is what Patrun indexes on, so it must match the chain form.
-    assert.deepEqual(listmsgs({
-      save_item: { pat: [{ aim: 'web' }, { save: 'item' }] }
-    })[0].props, { aim: 'web', save: 'item' })
+    assert.deepEqual(listmsgs([
+      { pat: [{ aim: 'web' }, { save: 'item' }] }
+    ])[0].props, { aim: 'web', save: 'item' })
 
     // meta is the definition without its pattern: `params` and `file` are the
     // two the runtime reads, and the rest rides along untouched.
-    assert.deepEqual(listmsgs({
-      save_item: {
+    assert.deepEqual(listmsgs([
+      {
         pat: [{ aim: 'web' }, { save: 'item' }],
         doc: 'Save an item',
         params: { id: 'string' },
         file: './custom_save',
       }
-    })[0].meta, { doc: 'Save an item', params: { id: 'string' }, file: './custom_save' })
+    ])[0].meta, { doc: 'Save an item', params: { id: 'string' }, file: './custom_save' })
 
-    // A container of definitions is not an empty leaf: it must not also emit a
-    // patternless message of its own.
-    assert.deepEqual(listmsgs({
-      save_item: { pat: [{ save: 'item' }] }
-    }).map(m => m.pattern), ['save:item'])
+    assert.deepEqual(listmsgs([]), [])
 
-    // Both shapes in one model.
-    assert.deepEqual(listmsgs({
-      a: { b: {} },
-      save_item: { pat: [{ aim: 'web' }, { save: 'item' }] },
-    }).map(m => m.pattern), ['aim:web,save:item', 'a:b'])
+    // Elements that are not definitions are skipped rather than thrown on.
+    assert.deepEqual(listmsgs([null, 'nope', {}, { pat: [{ a: 'b' }] }])
+      .map(m => m.pattern), ['a:b'])
 
-    // A definition under a chain prefix keeps the prefix.
-    assert.deepEqual(listmsgs({
-      a: { b: { save_item: { pat: [{ save: 'item' }] } } }
-    }).map(m => m.pattern), ['a:b,save:item'])
+    // Malformed pairs are dropped (@voxgig/model fails the build on these, so
+    // they only arrive from elsewhere). A pair holding two keys is dropped
+    // whole: which of them was meant is unknowable, and guessing would
+    // silently produce a pattern nobody declared.
+    assert.deepEqual(listmsgs([
+      { pat: [{ a: 'b' }, 'nope', null, { c: 'd', e: 'f' }, []] }
+    ]).map(m => m.pattern), ['a:b'])
 
-    // A legacy pattern pair spelled `pat:` is still a chain node - its value
-    // is a map, not a list - so the discriminator does not misread it.
-    assert.deepEqual(listmsgs({
-      pat: { web: {} }
-    }).map(m => m.pattern), ['pat:web'])
-
-    // Malformed pairs are dropped rather than thrown on (@voxgig/model fails
-    // the build on these, so they only arrive from elsewhere). A pair holding
-    // two keys is dropped whole: which of them was meant is unknowable, and
-    // guessing would silently produce a pattern nobody declared.
-    assert.deepEqual(listmsgs({
-      x: { pat: [{ a: 'b' }, 'nope', null, { c: 'd', e: 'f' }, []] }
-    }).map(m => m.pattern), ['a:b'])
-
-    assert.deepEqual(listmsgs({ x: { pat: [] } }).map(m => m.pattern), [''])
+    assert.deepEqual(listmsgs([{ pat: [] }]).map(m => m.pattern), [''])
   })
-
 
 
 })
