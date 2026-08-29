@@ -49,23 +49,26 @@ npm test        # node:test + coverage thresholds
 - MakeSrv convention: a model message maps to the action file named after
   its LAST pattern pair (`save:item` → `save_item.ts`). Only declare
   messages whose action files exist — boot fails otherwise.
-- `main.msg` has TWO shapes and `listmsgs` (`lib/utility.ts`) reads both, so
-  a project migrates message by message:
+- `main.msg` has TWO shapes and `listmsgs` (`lib/utility.ts`) reads both:
   - the legacy CHAIN, where the nesting is the pattern and `'$'` escapes the
     leaf — `aim: web: { save: item: { '$': { file: './web_save_item' } } }`;
-  - the DECLARED shape from `@voxgig/model` 10.1.0, one flat entry per
-    message with the pattern as data —
-    `save_item: { pat: [ {aim: web}, {save: item} ], params: {...} }`.
+  - the DECLARED shape, a **LIST** of definitions each carrying its pattern as
+    data — `[ { pat: [ {aim: web}, {save: item} ], params: {...} } ]`.
 
-  They are told apart by `pat` being a **list**: a chain node's values are
-  always maps, so even a legacy pair spelled `pat:` stays unambiguous. A
-  definition's `meta` is the definition minus `pat`, so `params` and `file`
-  keep working; the file name still comes from the last pattern pair, which
-  `@voxgig/model` validates equals the entry key. Note `srv.in` is a
-  pattern-PREFIX tree, never definitions, so it is unaffected.
+  A LIST, not a map keyed by message name. A gateway proxy and the message it
+  forwards to necessarily share their last pattern pair
+  (`aim:web,on:todo,save:item` proxies `aim:todo,save:item`), so any key
+  derived from that pair would collide and the two could not both be declared.
+  A list has no key. The action file is unchanged: the last pattern pair, or
+  `file` when declared — which is exactly what a proxy uses.
+
+  A definition's `meta` is the definition minus `pat`, so `params` and `file`
+  keep working. `srv.in` is a pattern-PREFIX tree, never definitions, so it is
+  unaffected. Requires `@voxgig/model` 11+ to build such a model.
 
   Not yet migrated: `add`'s generators (`WEB_MSG_DECL`, `addMsg`) still emit
   and path-check the chain form.
+
 
 ## Model gotchas
 
