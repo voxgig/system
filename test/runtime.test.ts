@@ -143,6 +143,78 @@ describe('MakeSrv + System.messages', () => {
     assert.ok(prepared)
   })
 
+
+  // The declared message shape end to end: the pattern comes from `pat`, and
+  // the action file from the entry key - which @voxgig/model validates equals
+  // the last pattern pair, so the existing last-pair convention still holds.
+  // `params` is now a declared field rather than a '$' leaf, and must still
+  // reach gubuify.
+  test('wires declared-shape messages', async () => {
+    const model = makeModel()
+    model.main.msg = {
+      get_info: { pat: [{ aim: 'alpha' }, { get: 'info' }] },
+      save_item: {
+        pat: [{ aim: 'alpha' }, { save: 'item' }],
+        doc: 'Save an item',
+        params: { item: { '$$': 'Open', title: 'String' } },
+      },
+      // A definition may still name its action file explicitly.
+      fetch_thing: {
+        pat: [{ aim: 'alpha' }, { fetch: 'thing' }],
+        file: './custom_fetch',
+      },
+    }
+    const seneca = makeSeneca(model)
+
+    const calls: string[] = []
+    const alpha = MakeSrv('alpha', fakeRequire({
+      './get_info': () => async () => (calls.push('get_info'), { ok: true, srv: 'alpha' }),
+      './save_item': () => async (msg: any) => (calls.push('save_item'), { ok: true, item: msg.item }),
+      './custom_fetch': () => async () => (calls.push('custom_fetch'), { ok: true, fetched: true }),
+    }))
+
+    seneca.use(alpha)
+    await seneca.ready()
+
+    assert.partialDeepStrictEqual(
+      await seneca.post('aim:alpha,get:info'), { ok: true, srv: 'alpha' })
+
+    assert.partialDeepStrictEqual(
+      await seneca.post('aim:alpha,save:item', { item: { title: 'x', extra: 1 } }),
+      { ok: true, item: { title: 'x', extra: 1 } })
+
+    assert.partialDeepStrictEqual(
+      await seneca.post('aim:alpha,fetch:thing'), { fetched: true })
+
+    assert.deepEqual(calls, ['get_info', 'save_item', 'custom_fetch'])
+  })
+
+
+  // Both shapes in one model: a project migrates message by message.
+  test('wires both shapes in one model', async () => {
+    const model = makeModel()
+    model.main.msg.save_thing = { pat: [{ aim: 'alpha' }, { save: 'thing' }] }
+    const seneca = makeSeneca(model)
+
+    const calls: string[] = []
+    const alpha = MakeSrv('alpha', fakeRequire({
+      './get_info': () => async () => (calls.push('get_info'), { ok: true }),
+      './save_item': () => async () => (calls.push('save_item'), { ok: true }),
+      './web_save_item': () => async () => (calls.push('web_save_item'), { ok: true }),
+      './save_thing': () => async () => (calls.push('save_thing'), { ok: true, thing: true }),
+    }))
+
+    seneca.use(alpha)
+    await seneca.ready()
+
+    // The legacy chain still resolves...
+    assert.partialDeepStrictEqual(await seneca.post('aim:alpha,get:info'), { ok: true })
+    // ...alongside the declared one.
+    assert.partialDeepStrictEqual(await seneca.post('aim:alpha,save:thing'), { thing: true })
+
+    assert.deepEqual(calls, ['get_info', 'save_thing'])
+  })
+
   test('model params become gubu validation on the message', async () => {
     const seneca = makeSeneca(makeModel())
 
