@@ -1,6 +1,6 @@
 # Reference: API
 
-*Diátaxis: reference — the package's exported surface (`system.ts`).*
+*The package's exported surface (`system.ts`).*
 
 ```js
 const { System, MakeSrv, Local, Live, Add, Template, Utility, gubuify } =
@@ -46,5 +46,5 @@ Programmatic form of the CLI `template` commands (implemented over
 
 ## `Utility`
 
-Helpers used across the runtime (`srvmsgs`, `deep`, ...). Internal-ish;
-prefer the exports above.
+Helpers used across the runtime, such as `srvmsgs` and `deep`. They are
+internal in all but name; prefer the preceding exports.

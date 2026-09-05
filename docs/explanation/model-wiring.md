@@ -1,6 +1,6 @@
 # Explanation: how the model wires the runtime
 
-*Diátaxis: explanation — the ideas behind `@voxgig/system`.*
+*The ideas behind `@voxgig/system`.*
 
 ## Declare in the model, implement on disk, connect by name
 
@@ -11,7 +11,7 @@ A Voxgig system keeps three things separate:
 - **The file system** (`src/srv/<srv>/*.ts`) holds *how*: one action file
   per message.
 - **`MakeSrv`** connects them at boot: for each model-declared message of
-  a service, it derives the action file name from the message's last
+  a service, it derives the action filename from the message's last
   pattern pair (`save:item` → `save_item`) and registers the action with
   gubu-validated params from the model's `params` declaration.
 

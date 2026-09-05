@@ -1,8 +1,8 @@
 # Tutorial: grow a project with the CLI
 
-*Diátaxis: tutorial — a hands-on lesson. Starting from an empty Voxgig
-system project, you will add an entity, a service, and a message, and see
-each one wired into the running system.*
+*A hands-on lesson. Starting from an empty Voxgig system project, you add
+an entity, a service, and a message, and see each one wired into the
+running system.*
 
 ## 1. Start from an empty project
 

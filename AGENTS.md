@@ -26,6 +26,8 @@ npm test        # node:test + coverage thresholds
   added as proxies here, never by widening the allow-list.
 - `lib/template.ts` — template list/eject/diff over `@voxgig/build`'s
   `Fragments` API.
+- `STYLE-GUIDE.md`, `.vale.ini`, `.vale/`, `tools/check_prose.py` — the
+  prose gate over `README.md` and `docs/` (see below).
 
 ## Hard rules
 
@@ -76,3 +78,27 @@ npm test        # node:test + coverage thresholds
 - Gubu message params are closed by default; `'$$': 'Open'` opens them.
 - Relationship fields: `kind: String` + `ref: 'zone/name'` attr (+
   usually `valid: Skip`); `kind: 'Ref'` is invalid.
+
+## Prose follows STYLE-GUIDE.md
+
+[`STYLE-GUIDE.md`](STYLE-GUIDE.md) is normative for the reader-facing pages:
+the root `README.md` and every page under `docs/`. Two gates enforce it and
+both run in CI (`.github/workflows/docs.yml`):
+
+| Gate | Checks |
+|---|---|
+| `vale --minAlertLevel=error $(python3 tools/check_prose.py --files)` | Google's rules plus the banned list, at the levels in `.vale.ini` |
+| `python3 tools/check_prose.py` | the banned list across line wraps, em-dash spacing and ration, first person, no emoji, no citations of a working document, resolving relative links, a complete page set |
+
+`npm run scan-prose` runs the second locally; run Vale by hand (`vale sync`
+once, then the command in the table) for the first. Neither is chained into
+`npm test`. The banned list is
+`.vale/styles/config/vocabularies/System/reject.txt`, read by both gates. The
+page set is the configuration block at the top of `tools/check_prose.py`;
+a new documentation page must be reachable from it or neither gate reads it.
+
+Three things trip agents most often: a page must not name or link
+`AGENTS.md`, `NEXT.org` or `ci/COVERAGE.md` (state the fact instead); the
+em dash is spaced (` — `) and rationed to one aside per line; and a word
+Vale's dictionary does not know goes into `accept.txt` one entry at a time,
+never as a suffix pattern.

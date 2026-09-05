@@ -1,7 +1,7 @@
 # How to add model elements
 
-*Diátaxis: how-to guide — recipes for each `voxgig-system add` command.
-Run inside the project (or its `backend/` folder); always finish with
+*Recipes for each `voxgig-system add` command. Run them inside the
+project (or its `backend/` folder), and always finish with
 `npm run model-build`.*
 
 Every element accepts either a **name** (an empty element is added) or a
