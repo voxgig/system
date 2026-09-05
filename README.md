@@ -13,7 +13,7 @@ Runtime and tooling for Voxgig system projects (as created by
 
 ## Documentation
 
-Organised by the [Diátaxis](https://diataxis.fr) framework:
+Organised into four kinds of page:
 
 - **Tutorial**: [Grow a project with the CLI](docs/tutorial.md)
 - **How-to guides**:
@@ -23,8 +23,6 @@ Organised by the [Diátaxis](https://diataxis.fr) framework:
   - [CLI](docs/reference/cli.md)
   - [API](docs/reference/api.md)
 - **Explanation**: [How the model wires the runtime](docs/explanation/model-wiring.md)
-
-Working on this repo with an AI agent? See [AGENTS.md](AGENTS.md).
 
 ## Quick start
 
@@ -43,6 +41,11 @@ npm install
 npm run build
 npm test
 ```
+
+`dist/` is committed, so run `npm run build` before you commit. The `add`
+commands append to the model files rather than rewriting them, and the
+tests hold them to that: preserving a user's formatting and comments is a
+feature. The documentation follows [the style guide](STYLE-GUIDE.md).
 
 ## License
 

@@ -1,7 +1,7 @@
 # Reference: the voxgig-system CLI
 
-*Diátaxis: reference — commands and argument syntax. Run inside a Voxgig
-system project (or its `backend/` folder).*
+*Commands and argument syntax. Run inside a Voxgig system project (or its
+`backend/` folder).*
 
 ```
 voxgig-system <command> [args...]
@@ -14,7 +14,7 @@ voxgig-system <command> [args...]
 | `add entity [name\|spec]` | Add an entity (name may be `zone/name`; zone defaults to `'app'` or the file's zone) |
 | `add srv [name\|spec]` | Add a service |
 | `add msg [name\|spec]` | Add a message (path form `thing.save.item`; `aim` prepended if missing) |
-| `add field <entity> [field...]` | Add field(s) to an entity |
+| `add field <entity> [field...]` | Add fields to an entity |
 | `add fields <entity> [field...]` | Alias of `add field` |
 | `add env [name\|spec]` | Declare a target environment (`local`, `basic`, `docker`, `vm`, `aws`, `azure`, `cloudflare`, `web`) |
 

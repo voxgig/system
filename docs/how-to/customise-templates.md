@@ -1,7 +1,6 @@
 # How to customise generation templates
 
-*Diátaxis: how-to guide — take ownership of a generation template in your
-project.*
+*How to take ownership of a generation template in your project.*
 
 Generation templates resolve in layers — first hit wins:
 
