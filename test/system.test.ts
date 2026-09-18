@@ -98,8 +98,6 @@ describe('system', () => {
       { pat: [{ aim: 'web' }, { save: 'item' }] }
     ])[0].props, { aim: 'web', save: 'item' })
 
-    // meta is the definition without its pattern: `params` and `file` are the
-    // two the runtime reads, and the rest rides along untouched.
     assert.deepEqual(listmsgs([
       {
         pat: [{ aim: 'web' }, { save: 'item' }],
@@ -115,10 +113,6 @@ describe('system', () => {
     assert.deepEqual(listmsgs([null, 'nope', {}, { pat: [{ a: 'b' }] }])
       .map(m => m.pattern), ['a:b'])
 
-    // Malformed pairs are dropped (@voxgig/model fails the build on these, so
-    // they only arrive from elsewhere). A pair holding two keys is dropped
-    // whole: which of them was meant is unknowable, and guessing would
-    // silently produce a pattern nobody declared.
     assert.deepEqual(listmsgs([
       { pat: [{ a: 'b' }, 'nope', null, { c: 'd', e: 'f' }, []] }
     ]).map(m => m.pattern), ['a:b'])

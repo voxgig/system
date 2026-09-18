@@ -1,29 +1,7 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License. */
 
-// devtools: the development-only behaviour an environment entry switches
-// on - Seneca's test mode, and the @seneca/repl dev REPL.
-//
-// These were hard-coded in the generated web entry: seneca.test() ran
-// unconditionally, and the REPL was on unless a bare `REPL=false` said
-// otherwise. Neither was visible in the model, so what a deployment
-// actually enabled could not be read off it - and `REPL` is a name generic
-// enough to collide with anything else in the environment.
-//
-// Now the model says what a deployment enables, and the env vars that
-// override it are namespaced.
-//
-// @seneca/repl has no `active` option - its options shape is CLOSED, and
-// passing one fails at load with "Plugin repl: option value is not valid".
-// So enabling is a conditional `use`, not a plugin flag. If that changes
-// upstream, this is the one place to simplify.
 
 
-// Where the flags come from, most specific first:
-//   1. <PREFIX>TEST / <PREFIX>REPL      - runtime override
-//   2. main.env.<env>.dev.<flag>        - per-environment, from the model
-//   3. main.conf.dev.<flag>             - project default, from the model
-//   4. false                            - a deployment enables dev tooling
-//                                         deliberately, never by accident
 const DEFAULT_PREFIX = 'SENECA_'
 
 
@@ -74,7 +52,6 @@ function envPrefix(model: any, spec: DevtoolsSpec): string {
 }
 
 
-// Resolve one dev flag through the four sources above.
 function devFlag(
   model: any, spec: DevtoolsSpec, flag: string, env: NodeJS.ProcessEnv
 ): boolean {
@@ -127,12 +104,6 @@ function replPort(model: any, spec: DevtoolsSpec, env: NodeJS.ProcessEnv):
 }
 
 
-// devtools(seneca, model, { env }): apply the dev-only behaviour this
-// environment declares. Returns { test, repl, port } - what it decided -
-// so an entry can log it or a test can assert on it.
-//
-// The REPL plugin is loaded only when enabled: it is the project's
-// dependency, not this package's.
 function devtools(seneca: any, model: any, spec: DevtoolsSpec): {
   test: boolean, repl: boolean, port?: number
 } {

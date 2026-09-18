@@ -1,15 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License */
 
-// Runtime coverage: System.messages/prepare (message wiring by the
-// MakeSrv convention, gubu param shapes from the model), MakeSrv itself,
-// and the Local/Live service assemblers.
-//
-// Two techniques keep this a fast unit test with no transport and no
-// real backend:
-//   - MakeSrv takes the service's `require`, so a FAKE require hands it
-//     action factories directly - no files, no module-loader games.
-//   - Other services are stood in for with MOCK MESSAGES
-//     (seneca.message(...)), the Seneca-native way to isolate a unit.
 
 import { describe, test } from 'node:test'
 import assert from 'node:assert'
@@ -23,8 +13,6 @@ import Seneca from 'seneca'
 import { System, MakeSrv, Local, Live, Utility } from '../system'
 
 
-// A model with two services: 'alpha' (own messages + a gateway route +
-// params, including an Open object) and 'beta' (a dependency of alpha).
 function makeModel(): any {
   return {
     main: {
@@ -126,7 +114,6 @@ describe('MakeSrv + System.messages', () => {
       './save_item': () => async (msg: any) => (calls.push('save_item'), { ok: true, item: msg.item }),
       // The gateway route declares $.file, overriding the convention.
       './web_save_item': () => async () => (calls.push('web_save_item'), { ok: true, web: true }),
-      // Optional prepare module: present here.
       './alpha-prepare': () => async function () {
         prepared = true
       },
@@ -349,7 +336,6 @@ describe('Local and Live', () => {
     await seneca.ready()
     assert.partialDeepStrictEqual(await seneca.post('aim:alpha,get:info'), { srv: 'alpha' })
 
-    // A service with no file on disk only warns.
     const model2 = makeModel()
     delete model2.main.srv.alpha.deps
     const seneca2 = makeSeneca(model2)

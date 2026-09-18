@@ -1,11 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License */
 
-// context(): the runtime facts an environment entry puts on Seneca.
-//
-// The interesting part is the stage resolution order, and the fact that a
-// model-declared stage is honoured at all - before this existed, every
-// generated entry hard-coded `process.env.STAGE || '<env>'` and threw away
-// `main.env.<env>.stage`.
 
 import { describe, test, beforeEach, afterEach } from 'node:test'
 import assert from 'node:assert'
@@ -74,7 +68,6 @@ describe('context', () => {
 
     delete process.env.STAGE
 
-    // 3. the model's env entry - the value that used to be thrown away.
     const c: any = fakeSeneca()
     context(c, model({ aws: { stage: 'dev' } }), PKG, { env: 'aws' })
     assert.strictEqual(c.context.stage, 'dev')
@@ -118,8 +111,6 @@ describe('context', () => {
       () => context(fakeSeneca(), model(), PKG, undefined as any),
       /requires a non-empty `env` string/)
 
-    // 'lambda' and 'test' are entries with no matching main.env key, so
-    // env is deliberately NOT validated against the model.
     const seneca: any = fakeSeneca()
     context(seneca, model({ aws: {} }), PKG, { env: 'lambda' })
     assert.strictEqual(seneca.context.env, 'lambda')

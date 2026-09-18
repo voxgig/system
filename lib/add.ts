@@ -1,13 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License. */
 
-// Add elements (entity, srv, msg, field) to a Voxgig system project by
-// appending jsonic blocks to the project's model source files. Appending
-// works because aontu unifies repeated paths, and it preserves the user's
-// existing formatting and comments.
-//
-// Each add* function takes either a String(name) - an empty element of
-// that name is added - or a Jsonic(spec) - a jsonic definition of the
-// element with config options.
 
 import Fs from 'node:fs'
 import Path from 'node:path'
@@ -20,16 +12,16 @@ const BARE_TOKENS = ['String', 'Number', 'Boolean', 'Skip']
 
 
 export type ModelFiles = {
-  folder: string       // the model folder
-  model: string        // root model file path (model.aontu)
-  ent: string          // entity file path
-  msg: string          // message file path
-  srv: string          // service file path
+  folder: string
+  model: string
+  ent: string
+  msg: string
+  srv: string
 }
 
 export type AddResult = {
-  file: string         // file appended to
-  text: string         // the appended block ('' when skipped)
+  file: string
+  text: string
   skipped?: boolean    // true when the element already exists (no change)
   merged?: string[]    // paths appended into an element that already existed
   conflicts?: {        // paths already set to a DIFFERENT value; see below
@@ -167,14 +159,12 @@ function parseArg(arg: string, kind: string): { name: string, def: any } {
   }
 
   if (null != parsed && 'object' === typeof parsed && !Array.isArray(parsed)) {
-    // { name: 'foo', ...def }
     if ('string' === typeof parsed.name) {
       const def = { ...parsed }
       delete def.name
       return { name: parsed.name, def }
     }
 
-    // { foo: {...def} } - single-key form
     const keys = Object.keys(parsed)
     if (1 === keys.length && 'object' === typeof parsed[keys[0]]) {
       return { name: keys[0], def: parsed[keys[0]] }
@@ -186,18 +176,6 @@ function parseArg(arg: string, kind: string): { name: string, def: any } {
 }
 
 
-// Split a definition against what the compiled model already holds.
-//
-// `fresh` is the sub-tree of paths NOT yet set - safe to append, because
-// aontu unifies it in. `conflicts` are paths already set to a DIFFERENT
-// value: appending those is NOT a merge, it is a build error -
-//
-//   [aontu/scalar_value]: Cannot unify values at path $.main.env.aws.stage
-//   Cannot unify value: "prd" with value: "dev"
-//
-// aontu unifies, it does not override, so a changed value cannot be
-// applied by appending. It is reported for the user to edit by hand,
-// rather than written and left to break the next model build.
 function diffDef(want: any, have: any, path: string): {
   fresh: any, conflicts: { path: string, current: any, wanted: any }[]
 } {
@@ -238,12 +216,6 @@ function diffDef(want: any, have: any, path: string): {
 }
 
 
-// The last compiled model (model.json next to the model source), used to
-// make the add operations idempotent: an element that already exists in
-// the compiled model is skipped rather than appended again. Formatting
-// of the sources is irrelevant since the check is semantic. Returns null
-// when the model has not been compiled yet (adds then simply append -
-// aontu unification of an identical element converges anyway).
 function compiledModel(files: ModelFiles): any {
   const p = Path.join(files.folder, 'model.json')
   try {
@@ -521,15 +493,6 @@ const ENV_KINDS =
   ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare', 'web']
 
 
-// add env [String(name)|Jsonic(spec)]
-// Declares a target environment in the model (main: env: <name>: {...}).
-// Name form: `add env aws`. Spec form: `add env
-// '{name:aws2,kind:aws,region:eu-west-1,stage:prd}'`. Appends to the
-// model file referenced as `main: env: @"..."` when present, else to the
-// root model file.
-// Service declarations the web env needs so MakeSrv wires the generated
-// auth + generic-entity service files. Appended to srv.aontu / msg.aontu by
-// `add env web` (idempotent: only when the auth service is not yet declared).
 const WEB_SRV_DECL = `
 # Auth service (signin/signout/session + settings/security).
 auth: {

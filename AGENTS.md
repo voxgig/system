@@ -102,3 +102,11 @@ Three things trip agents most often: a page must not name or link
 em dash is spaced (` — `) and rationed to one aside per line; and a word
 Vale's dictionary does not know goes into `accept.txt` one entry at a time,
 never as a suffix pattern.
+
+## Source code comments
+
+Follow [COMMENT-POLICY.md](COMMENT-POLICY.md): comments are sparse and terse,
+only for intricate or surprising code. Names carry intent; documents carry
+requirements. Run `make comments comments-test` after editing source.
+
+Durable implementation rationale is in [COMMENT-NOTES.md](COMMENT-NOTES.md).

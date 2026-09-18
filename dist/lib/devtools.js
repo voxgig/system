@@ -4,28 +4,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DEFAULT_PREFIX = void 0;
 exports.devtools = devtools;
 exports.envFlag = envFlag;
-// devtools: the development-only behaviour an environment entry switches
-// on - Seneca's test mode, and the @seneca/repl dev REPL.
-//
-// These were hard-coded in the generated web entry: seneca.test() ran
-// unconditionally, and the REPL was on unless a bare `REPL=false` said
-// otherwise. Neither was visible in the model, so what a deployment
-// actually enabled could not be read off it - and `REPL` is a name generic
-// enough to collide with anything else in the environment.
-//
-// Now the model says what a deployment enables, and the env vars that
-// override it are namespaced.
-//
-// @seneca/repl has no `active` option - its options shape is CLOSED, and
-// passing one fails at load with "Plugin repl: option value is not valid".
-// So enabling is a conditional `use`, not a plugin flag. If that changes
-// upstream, this is the one place to simplify.
-// Where the flags come from, most specific first:
-//   1. <PREFIX>TEST / <PREFIX>REPL      - runtime override
-//   2. main.env.<env>.dev.<flag>        - per-environment, from the model
-//   3. main.conf.dev.<flag>             - project default, from the model
-//   4. false                            - a deployment enables dev tooling
-//                                         deliberately, never by accident
 const DEFAULT_PREFIX = 'SENECA_';
 exports.DEFAULT_PREFIX = DEFAULT_PREFIX;
 // Parse an env var as a boolean. Absent or empty means "not set", so the
@@ -59,7 +37,6 @@ function envPrefix(model, spec) {
     }
     return DEFAULT_PREFIX;
 }
-// Resolve one dev flag through the four sources above.
 function devFlag(model, spec, flag, env) {
     const name = envPrefix(model, spec) + flag.toUpperCase();
     const fromEnv = envFlag(name, env[name]);
@@ -96,12 +73,6 @@ function replPort(model, spec, env) {
         model.main.conf.port && model.main.conf.port.repl;
     return 'number' === typeof port ? port : undefined;
 }
-// devtools(seneca, model, { env }): apply the dev-only behaviour this
-// environment declares. Returns { test, repl, port } - what it decided -
-// so an entry can log it or a test can assert on it.
-//
-// The REPL plugin is loaded only when enabled: it is the project's
-// dependency, not this package's.
 function devtools(seneca, model, spec) {
     if (null == spec || 'string' !== typeof spec.env || '' === spec.env) {
         throw new Error('voxgig-system: devtools requires a non-empty `env` string');

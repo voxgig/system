@@ -208,20 +208,19 @@ describe('add-idempotency', () => {
     assert.deepEqual(addMsg(root, 'aim:thing:save:item').skipped, true)
 
     const fields = addFields(root, 'thing', ['title', 'done:Boolean'])
-    assert.deepEqual(fields[0].skipped, true)      // title exists
-    assert.strictEqual(fields[1].skipped, undefined)    // done is new
+    assert.deepEqual(fields[0].skipped, true)
+    assert.strictEqual(fields[1].skipped, undefined)
 
     // nothing appended for the skips
-    assert.ok(((Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length) > (entlen))) // only the new 'done' field grew the file
+    assert.ok(((Fs.readFileSync(Path.join(model, 'ent.aontu'), 'utf8').length) > (entlen)))
 
-    // new elements still append
     assert.strictEqual(addEntity(root, 'other').skipped, undefined)
     assert.strictEqual(addMsg(root, 'thing.load.item').skipped, undefined)
   })
 
 
   test('no-compiled-model-appends', () => {
-    const root = makeProject() // no model.json
+    const root = makeProject()
     assert.strictEqual(addEntity(root, 'thing').skipped, undefined)
   })
 
