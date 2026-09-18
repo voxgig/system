@@ -1,20 +1,5 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License. */
 
-// Template customization tooling: list / eject / diff for the generation
-// templates provided by @voxgig/build.
-//
-// Layered resolution (first hit wins):
-//   1. backend/src/gen/<name>.ts   compiled generator override (deep custom)
-//   2. backend/tm/<area>/<frag>    project fragment (text-level custom)
-//   3. @voxgig/build               package defaults
-//
-// Fragment names are area-qualified (lambda/srv.yml.frag,
-// env/aws/serverless.yml.frag); bare names default to the lambda area.
-//
-// eject copies a package fragment (or, with code=true, a template source
-// rewired to the package's public API) into the project, recording
-// provenance in tm/lambda/.ejected.json so diff can show upstream drift
-// after package upgrades.
 
 import Crypto from 'node:crypto'
 import Fs from 'node:fs'
@@ -84,9 +69,6 @@ type Provenance = Record<string, {
   package: string, version: string, sha256: string
 }>
 
-// Provenance lives at tm/.ejected.json; the pre-area location
-// (tm/lambda/.ejected.json) and bare fragment keys are still read, with
-// bare keys normalized to the lambda area.
 function readProvenance(project: Project): Provenance {
   const out: Provenance = {}
   for (const p of [

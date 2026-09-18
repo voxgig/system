@@ -12,13 +12,11 @@ import { util } from '@tabnas/jsonic'
 import Patrun from 'patrun'
 
 
-// TODO: perform this during model build?
 function srvmsgs(srv: Record<string, any>, model: Record<string, any>): Msg[] {
   const allmsgs = listmsgs(model.main.msg)
   const allpat = Patrun({})
   allmsgs.forEach((msg: Msg) => allpat.add(msg.props, msg))
 
-  // TODO: need an option to listmsgs to just list patterns
   const srvpats = listmsgs(srv.in).map(m => m.props)
   const srvmsgs: Msg[] = []
   srvpats.reduce((a, pat) =>
@@ -85,15 +83,6 @@ function walkmsgs(
   path: string[][],
   handle: (path: string[][], meta: any) => void) {
 
-  // THE DECLARED SHAPE: main.msg is a LIST of definitions, each carrying its
-  // pattern as data rather than as its position in the tree.
-  //
-  // A list rather than a map keyed by message name, because a gateway proxy
-  // and the message it forwards to necessarily share their last pattern pair
-  // (aim:web,on:todo,save:item proxies aim:todo,save:item), so any key derived
-  // from that pair would collide and the two could not both be declared. A
-  // list has no key, so the question never arises - and the action file still
-  // comes from the last pair, or from `file`, exactly as before.
   if (Array.isArray(point)) {
     for (let def of point) {
       if (ismsgdef(def)) {
@@ -105,19 +94,15 @@ function walkmsgs(
     return
   }
 
-  // THE LEGACY CHAIN: the nesting is the pattern, consumed two levels at a
-  // time, with '$' carrying the metadata. Unchanged.
   let points = 'object' === typeof point ?
     Object.entries(point).filter(entry => !entry[0].includes('$')) : []
   for (let step of points) {
     let key = step[0]
-    // TODO: capture error log if step[1] empty (key with no vals)
     for (let val of Object.keys(step[1])) {
       walkmsgs(step[1][val], path.concat([[key, val]]), handle)
     }
   }
 
-  // if any $ meta props, or no points, we found a msg
   if (0 === points.length || point.$) {
     const meta = point.$ || {}
     handle(path, meta)

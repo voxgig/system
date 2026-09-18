@@ -3,20 +3,6 @@
 /* Copyright © 2026 Voxgig Ltd, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.main = main;
-// voxgig-system: command line for working with a Voxgig system project.
-//
-//   voxgig-system add entity [String(name)|Jsonic(spec)]
-//   voxgig-system add srv    [String(name)|Jsonic(spec)]
-//   voxgig-system add msg    [String(name)|Jsonic(spec)]
-//   voxgig-system add field  <entity> [String(name)|Jsonic(spec)] ...
-//   voxgig-system add fields <entity> [String(name)|Jsonic(spec)] ...
-//
-// String(name): the element name - an empty element is added.
-// Jsonic(spec): a jsonic definition of the element with config options.
-//
-// Run inside a project (or its backend/ folder); the model source files
-// are found via model/model.jsonic and appended to. Run the project's
-// model build (npm run model-build) afterwards to compile.
 const add_1 = require("./lib/add");
 const template_1 = require("./lib/template");
 const USAGE = `Usage: voxgig-system <command> [args...]

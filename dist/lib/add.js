@@ -13,14 +13,6 @@ exports.addMsg = addMsg;
 exports.addFields = addFields;
 exports.addEnv = addEnv;
 exports.fmt = fmt;
-// Add elements (entity, srv, msg, field) to a Voxgig system project by
-// appending jsonic blocks to the project's model source files. Appending
-// works because aontu unifies repeated paths, and it preserves the user's
-// existing formatting and comments.
-//
-// Each add* function takes either a String(name) - an empty element of
-// that name is added - or a Jsonic(spec) - a jsonic definition of the
-// element with config options.
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const jsonic_1 = require("@tabnas/jsonic");
@@ -134,13 +126,11 @@ function parseArg(arg, kind) {
         return { name: parsed, def: {} };
     }
     if (null != parsed && 'object' === typeof parsed && !Array.isArray(parsed)) {
-        // { name: 'foo', ...def }
         if ('string' === typeof parsed.name) {
             const def = { ...parsed };
             delete def.name;
             return { name: parsed.name, def };
         }
-        // { foo: {...def} } - single-key form
         const keys = Object.keys(parsed);
         if (1 === keys.length && 'object' === typeof parsed[keys[0]]) {
             return { name: keys[0], def: parsed[keys[0]] };
@@ -149,18 +139,6 @@ function parseArg(arg, kind) {
     throw new Error('invalid ' + kind + ' argument: ' + arg +
         ' - provide a name, {name:...,...spec}, or {thename:{...spec}}');
 }
-// Split a definition against what the compiled model already holds.
-//
-// `fresh` is the sub-tree of paths NOT yet set - safe to append, because
-// aontu unifies it in. `conflicts` are paths already set to a DIFFERENT
-// value: appending those is NOT a merge, it is a build error -
-//
-//   [aontu/scalar_value]: Cannot unify values at path $.main.env.aws.stage
-//   Cannot unify value: "prd" with value: "dev"
-//
-// aontu unifies, it does not override, so a changed value cannot be
-// applied by appending. It is reported for the user to edit by hand,
-// rather than written and left to break the next model build.
 function diffDef(want, have, path) {
     const conflicts = [];
     function walk(w, h, p) {
@@ -191,12 +169,6 @@ function diffDef(want, have, path) {
     }
     return { fresh: walk(want, have, path), conflicts };
 }
-// The last compiled model (model.json next to the model source), used to
-// make the add operations idempotent: an element that already exists in
-// the compiled model is skipped rather than appended again. Formatting
-// of the sources is irrelevant since the check is semantic. Returns null
-// when the model has not been compiled yet (adds then simply append -
-// aontu unification of an identical element converges anyway).
 function compiledModel(files) {
     const p = node_path_1.default.join(files.folder, 'model.json');
     try {
@@ -419,15 +391,6 @@ function addFields(start, entref, fieldargs) {
 // to the env name; an unknown kind fails generation with this list too).
 const ENV_KINDS = ['local', 'basic', 'docker', 'vm', 'aws', 'azure', 'cloudflare', 'web'];
 exports.ENV_KINDS = ENV_KINDS;
-// add env [String(name)|Jsonic(spec)]
-// Declares a target environment in the model (main: env: <name>: {...}).
-// Name form: `add env aws`. Spec form: `add env
-// '{name:aws2,kind:aws,region:eu-west-1,stage:prd}'`. Appends to the
-// model file referenced as `main: env: @"..."` when present, else to the
-// root model file.
-// Service declarations the web env needs so MakeSrv wires the generated
-// auth + generic-entity service files. Appended to srv.aontu / msg.aontu by
-// `add env web` (idempotent: only when the auth service is not yet declared).
 const WEB_SRV_DECL = `
 # Auth service (signin/signout/session + settings/security).
 auth: {

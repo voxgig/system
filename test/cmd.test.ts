@@ -140,6 +140,34 @@ describe('cmd', () => {
     assert.strictEqual(missing.code, 1)
   })
 
+  test('repeated additions report unchanged values and refuse conflicting values', async () => {
+    const root = makeProject()
+    try {
+      const initial = await run(['add', 'env', '{name:aws,stage:dev}'], root)
+      assert.strictEqual(initial.code, 0)
+      const file = Path.join(root, 'backend', 'model', 'env.aontu')
+      const before = Fs.readFileSync(file, 'utf8')
+      Fs.writeFileSync(Path.join(Path.dirname(file), 'model.json'), JSON.stringify({
+        main: { env: { aws: { active: true, stage: 'dev' } } },
+      }))
+
+      const same = await run(['add', 'env', '{name:aws,stage:dev}'], root)
+      assert.strictEqual(same.code, 0)
+      assert.match(same.out, /already present/)
+      assert.doesNotMatch(same.out, /NOT applied/)
+
+      const conflict = await run(['add', 'env', '{name:aws,stage:prd}'], root)
+      assert.strictEqual(conflict.code, 0)
+      assert.match(conflict.out, /NOT applied/)
+      assert.match(conflict.out, /main\.env\.aws\.stage/)
+      assert.match(conflict.out, /"dev".*wanted "prd"/)
+      assert.strictEqual(Fs.readFileSync(file, 'utf8'), before)
+    }
+    finally {
+      Fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
+
   test('unknown top-level command is reported', async () => {
     const r = await run(['wat'])
     assert.strictEqual(r.code, 1)

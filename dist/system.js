@@ -43,12 +43,6 @@ function gubuify(params, Gubu) {
     }
     return Gubu(gubuify_spec(params, Gubu));
 }
-// Convert model param values into a gubu spec. The '$$': 'Open' marker
-// (same convention as entity valid) makes an object open: additional
-// properties are allowed. Without it gubu objects are closed, which made
-// open message params inexpressible in the model. Nested specs stay raw
-// (builder results, not Gubu instances) so attributes like openness
-// compose into the parent shape.
 function gubuify_spec(params, Gubu) {
     if (null == params) {
         return params;
@@ -79,7 +73,6 @@ function actpath(msg) {
         return msg.meta.file;
     }
     let pairs = msg.pattern.split(/\s*,\s*/);
-    // TODO: maybe take more than just the last one!
     let path = './' + pairs[pairs.length - 1].replace(/:/g, '_');
     return path;
 }
